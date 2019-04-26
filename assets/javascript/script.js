@@ -118,8 +118,15 @@ function updateStatus(fileName, ruleSet, issueCount) {
  * Final processing after all data has loaded.
  */
 function loaded() {
+
   enableLink("download-issues");
-  // enableLink("download-badge");
+  enableLink("download-badge");
+
+  let issueCount = document.getElementById("issue-count");
+  issueCount.innerText = `(${issues.length})`;
+
+  let div = document.getElementById("svg");
+  div.innerHTML = getBadge();
 }
 
 /**
@@ -145,6 +152,10 @@ function saveIssues() {
   saveAs(blob, "ndr-conformance-results.csv");
 }
 
+function saveBadge() {
+  let blob = new Blob([getBadge()], {type: "image/svg+xml;charset=utf-8"});
+  saveAs(blob, "niem-ndr-badge.svg");
+}
 
 function loadSchema(xsdPath, fileName) {
 
@@ -277,4 +288,36 @@ function addRow(tableNode, issue) {
   row.appendChild(cellRule);
   row.appendChild(cellDescription);
 
+}
+
+function getBadge() {
+
+  let count = issues.length;
+
+  let color = count ? "#e05d44" : "#4c1";
+  // warning color: #dfb317
+
+  let svg = `<svg
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="150" height="20">
+  <linearGradient id="b" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1" />
+    <stop offset="1" stop-opacity=".1" />
+  </linearGradient>
+  <clipPath id="a">
+    <rect width="150" height="20" rx="3" fill="#fff" />
+  </clipPath>
+  <g clip-path="url(#a)">
+    <path fill="#555" d="M0 0h67v20H0z" />
+    <path fill="${color}" d="M67 0h83v20H67z" />
+    <path fill="url(#b)" d="M0 0h150v20H0z" />
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110">
+    <text x="345" y="140" transform="scale(.1)" textLength="570">NIEM NDR</text>
+    <text x="1060" y="140" transform="scale(.1)" textLength="700">${count} issues</text>
+  </g>
+</svg>`;
+
+  return svg;
 }

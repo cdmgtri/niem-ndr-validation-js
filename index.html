@@ -18,15 +18,15 @@
       <hr />
 
       <div class="row">
-
         <div class="col">
-          <h2>Overall Status</h2>
+          <h2>Overall Status <span id="svg"></span></h2>
 
           Download:
           <a id="download-issues" disabled onclick="saveIssues()">Issues</a> |
           <a id="download-badge" disabled onclick="saveBadge()">Badge</a>
           <br /><br />
 
+          <!-- File status table -->
           <table id="status" class="table table-width-auto">
             <tr>
               <th>File</th>
@@ -35,20 +35,11 @@
             </tr>
           </table>
         </div>
-
-        <!-- <div class="col">
-          <div class="btn-group download-group ">
-            <span class="btn btn-sm">Download</span>
-            <button id="download-issues" disabled type="button" class="btn btn-link btn-sm" onclick="saveIssues()">Issues</button>
-            <span class="btn btn-sm"> | </span>
-            <button id="download-badge" disabled type="button" class="btn btn-link btn-sm" onclick="saveBadge()">Badge</button>
-          </div>
-        </div> -->
       </div>
 
       <br/><br/>
 
-      <h2>Issue List</h2>
+      <h2>Issue List <span id="issue-count"></span></h2>
       <table id="log" class="table table-hover">
         <tr>
           <th>File</th>
