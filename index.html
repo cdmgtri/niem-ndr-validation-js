@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>NIEM JS NDR Validation</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="style.css"/>
+
+    <script type="text/javascript" language="javascript" src="./assets/javascript/Saxon-JS/SaxonJS.min.js"></script>
+    <script type="text/javascript" language="javascript" src="./assets/javascript/file-saver/dist/FileSaver.min.js"></script>
+    <script type="text/javascript" language="javascript" src="./assets/javascript/script.js"></script>
+    <script>
+
+      /** @type{Document} */
+      let xsdDocument;
+
+      window.onload = function() {
+
+        // Load the input schema
+        loadSchema();
+
+        // Run the XSLT to get conformance test results
+        SaxonJS.transform({
+            stylesheetLocation: "http://localhost:8080/assets/ndr/ndr-rules-conformance-target-ext.sef",
+            sourceLocation: "http://localhost:8080/base-xsd/extension/extension.xsd",
+            // destination: "appendToBody"
+         }, callback);
+      }
+
+      /**
+       * @param {HTMLElement} resultElement
+       */
+      function callback(resultElement) {
+
+        // Save results to file
+        let svrl = resultElement.outerHTML;
+        let blob = new Blob([svrl], {type: "text/plain;charset=utf-8"});
+        // saveAs(blob, "results.svrl");
+
+        // Parse the SVRL results of the XSLT transform
+        parseIssues(xsdDocument, resultElement, "log");
+
+        // Remove loading message
+        let loadingNode = document.getElementById("loading");
+        loadingNode.parentNode.removeChild(loadingNode);
+
+        // Show results
+        document.getElementById("results").style.visibility = "visible";
+
+        console.log("DONE");
+      }
+
+      function loadSchema() {
+
+        let schemaFile = new XMLHttpRequest();
+        schemaFile.open("GET", "http://localhost:8080/base-xsd/extension/extension.xsd", true);
+        schemaFile.send(null);
+
+        schemaFile.onreadystatechange = function() {
+          if (schemaFile.readyState === 4 && schemaFile.status == 200) {
+            xsdDocument = schemaFile.responseXML;
+          }
+        };
+      }
+   </script>
+  </head>
+  <body>
+
+    <div class="container">
+
+      <h1>NDR Conformance Test Results</h1>
+
+      <div id="loading">Loading...</div>
+
+      <div id="results" style="visibility: hidden">
+        <h2>Status</h2>
+        <div id="status"/>
+
+        <h2>Issues</h2>
+        <table id="log" class="table table-hover">
+          <tr>
+            <th>File</th>
+            <th>Line</th>
+            <th>Component</th>
+            <th>Name</th>
+            <th class="td-no-wrap">Rule</th>
+            <th>Description</th>
+          </tr>
+        </table>
+
+        <details>
+          <summary>
+            <strong>Rules Checked</strong>
+          </summary>
+          <div id="checked"/>
+        </details>
+      </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>

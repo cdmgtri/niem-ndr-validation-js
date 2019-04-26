@@ -1,0 +1,14 @@
+
+body {
+  font-size: 14px;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+.td-no-wrap {
+  white-space: nowrap;
+  vertical-align: -webkit-baseline-middle;
+  width: 70px;
+}
