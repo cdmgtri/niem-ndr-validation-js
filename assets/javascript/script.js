@@ -1,6 +1,19 @@
 
+let loading = {};
 let xsdDocuments = {};
 let textDocuments = {};
+
+let IssueType = {
+  fileName: "",
+  lineNumber: 0,
+  component: "",
+  name: "",
+  rule: "",
+  description: ""
+};
+
+/** @type {IssueType[]} */
+let issues = [];
 
 /**
  * Tests each XSD in the base-xsd/extension directory
@@ -22,6 +35,8 @@ function validateFile(xsdPath) {
 
   let fileName = xsdPath.split("/").pop();
 
+  loading[fileName] = true;
+
   // Set status for the file
   addStatus(fileName, "", "Loading...");
 
@@ -36,18 +51,11 @@ function validateFile(xsdPath) {
       sourceLocation: xsdPath
     },
     resultElement => {
-
-      // Save results to file
-      let svrl = resultElement.outerHTML;
-      let blob = new Blob([svrl], {type: "text/plain;charset=utf-8"});
-      // saveAs(blob, "results.svrl");
-
       // Parse the SVRL results of the XSLT transform
       let issueCount = parseIssues(fileName, resultElement, "log");
 
       // Remove loading message
       updateStatus(fileName, "NDR 4.0 EXT", issueCount);
-
     });
 }
 
@@ -98,6 +106,43 @@ function updateStatus(fileName, ruleSet, issueCount) {
 
   // Set row style
   row.setAttribute("class", style);
+
+  // Remove file from loading queue and execute final processing if queue is empty.
+  delete loading[fileName];
+  if (Object.keys(loading).length == 0) {
+    loaded();
+  }
+}
+
+/**
+ * Final processing after all data has loaded.
+ */
+function loaded() {
+  enableLink("download-issues");
+  // enableLink("download-badge");
+}
+
+/**
+ * Gets the HTML element with the given linkID.
+ * Removes the "disabled" attribute and adds "href" attribute as "#".
+ */
+function enableLink(linkID) {
+  let link = document.getElementById(linkID);
+  link.removeAttribute("disabled");
+  link.setAttribute("href", "#");
+}
+
+function saveIssues() {
+
+  let csv = ['FileName, LineNumber, Component, Name, Rule, Description'];
+  issues.forEach( issue => {
+    csv.push( `${issue.fileName}, ${issue.lineNumber}, ${issue.component}, ${issue.name}, ${issue.rule}, ${issue.description}` );
+  });
+
+  let blob = new Blob([csv.join("\n")],
+    {type: "text/csv;charset=UTF-8", encoding: "UTF-8"}
+  );
+  saveAs(blob, "ndr-conformance-results.csv");
 }
 
 
@@ -139,15 +184,26 @@ function parseIssues(fileName, svrl, tableID) {
     let name = componentNode.attributes["name"].nodeValue;
     let kind = componentNode.localName;
     let msg = failedAssert.textContent;
-    let [rule, desc] = msg.split(": ");
+    let [rule, description] = msg.split(": ");
     rule = rule.replace("Rule ", "");
 
     // Get the line number
     let re = new RegExp(`${kind}\\s*name=.${name}`)
     let lineNumber = getLineNumber(textDocuments[fileName], re);
 
-    // Add row to the issue list
-    addRow(table, fileName, lineNumber, kind, name, rule, desc);
+    /** @type {IssueType} */
+    let issue = {
+      fileName,
+      lineNumber,
+      component: kind,
+      name,
+      rule,
+      description
+    };
+
+    // Add row to the issue list and HTML issue table
+    issues.push(issue);
+    addRow(table, issue);
   }
 
   return failedAsserts.length;
@@ -194,14 +250,9 @@ function getComponentRootNode(node) {
  *
  *
  * @param {Element} tableNode
- * @param {string} fileName
- * @param {string} lineNumber
- * @param {string} component
- * @param {string} name
- * @param {string} rule
- * @param {string} description
+ * @param {IssueType} issue
  */
-function addRow(tableNode, fileName, lineNumber, component, name, rule, description) {
+function addRow(tableNode, issue) {
 
   let cellFileName = document.createElement("td");
   let cellLineNumber = document.createElement("td");
@@ -210,12 +261,12 @@ function addRow(tableNode, fileName, lineNumber, component, name, rule, descript
   let cellRule = document.createElement("td");
   let cellDescription = document.createElement("td");
 
-  cellFileName.innerHTML = fileName;
-  cellLineNumber.innerHTML = lineNumber;
-  cellComponent.innerHTML = component;
-  cellName.innerHTML = name;
-  cellRule.innerHTML = rule;
-  cellDescription.innerHTML = description;
+  cellFileName.innerHTML = issue.fileName;
+  cellLineNumber.innerHTML = issue.lineNumber;
+  cellComponent.innerHTML = issue.component;
+  cellName.innerHTML = issue.name;
+  cellRule.innerHTML = issue.rule;
+  cellDescription.innerHTML = issue.description;
 
   let row = tableNode.appendChild( document.createElement("tr") );
 

@@ -10,6 +10,12 @@ This project uses Saxon-JS to transform NIEM XML schemas with pre-compiled NDR X
 - [x] Local web server to provide hard-coded input file access
 - [x] Validate XSDs against pre-compiled 4.0 EXT NDR rules.
 - [x] Parse resulting SVRL to display results
-- [ ] Save conformance report
+- [x] Save conformance report
 - [ ] Create NDR badge
+- [ ] Link results to NDR rules
+- [ ] Support multiple NDR rule sets
+  - [ ] Compile and save NDR rule files
+  - [ ] Parse each XSD and determine appropriate NDR rule set
+- [ ] Replace hard-coded XSDs with user file selections
+- [ ] Use NIEM tool template
 - [ ] Refactor Saxon-JS for Node.js implementation once available
