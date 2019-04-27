@@ -17,6 +17,18 @@
       <h1>NDR Conformance Test Results</h1>
       <hr />
 
+      <div class="input-group input-group-sm">
+        <div class="input-group-prepend">
+          <label class="input-group-text" for="ruleSet">Choose NDR rule set:</label>
+        </div>
+        <select class="custom-select" id="ruleSet" onchange="validateExtensionSchemas()">
+          <option value="auto" selected>Auto-detect</option>
+          <option value="NDR-4.0-EXT">NDR 4.0 EXT (for IEPD extension schemas)</option>
+          <option value="NDR-4.0-REF">NDR 4.0 REF (for reference and release schemas)</option>
+        </select>
+      </div>
+      <br /><br />
+
       <div class="row">
         <div class="col">
           <h2>Overall Status <span id="svg"></span></h2>
@@ -31,6 +43,7 @@
             <tr>
               <th>File</th>
               <th>Rule set</th>
+              <th>Message</th>
               <th>Status</th>
             </tr>
           </table>
@@ -39,7 +52,7 @@
 
       <br/><br/>
 
-      <h2>Issue List <span id="issue-count"></span></h2>
+      <h2>Issue List <span id="issue-count" class="badge badge-pill"></span></h2>
       <table id="log" class="table table-hover">
         <tr>
           <th>File</th>

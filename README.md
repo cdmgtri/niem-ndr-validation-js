@@ -13,9 +13,28 @@ This project uses Saxon-JS to transform NIEM XML schemas with pre-compiled NDR X
 - [x] Save conformance report
 - [x] Create NDR badge
 - [x] Link results to NDR rules
-- [ ] Support multiple NDR rule sets
-  - [ ] Compile and save NDR rule files
-  - [ ] Parse each XSD and determine appropriate NDR rule set
-- [ ] Replace hard-coded XSDs with user file selections
-- [ ] Use NIEM tool template
+- [x] Support multiple NDR rule sets
+- [ ] User file selections
+  - [ ] Single file
+  - [ ] Multi-select files
+  - [ ] zip file
+    - [ ] look for mpd-catalog for file instructions
 - [ ] Refactor Saxon-JS for Node.js implementation once available
+- [ ] Use NIEM tool template
+
+## Saxon JS
+
+Look at licensing for [Saxon JS](http://www.saxonica.com/saxon-js/index.xml).  Can generate the necessary `Stylesheet Export Files (SEFs)` from Oxygen, but it may still be necessary to get a Saxon-EE license in order to use Saxon-JS.  Can get the Saxon-EE license through Oxygen for a 25% discount (~ $350).
+
+## Compiling SEFs
+
+In Oxygen, go to Tools > Compile XSL stylesheet for Saxon...
+
+- Select `XSL URL`: Browse to the appropriate NDR `.sch.xsl` file from the full NDR zip.
+- Select `Target` as "Saxon-JS"
+- Make sure `Relocatable` is checked.
+- Select output file, e.g., "NDR-4.0-EXT.sef"
+
+## No support for NDR 3.0
+
+The NDR 3.0 schematron files do not generate the same SVRL output as do the 4.0 files, so they are not supported at this time.

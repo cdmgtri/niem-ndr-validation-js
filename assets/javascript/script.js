@@ -1,7 +1,18 @@
 
 let loading = {};
 let xsdDocuments = {};
+let xslMatches = {};
 let textDocuments = {};
+
+/** @type {Object<string, FileStatusType} */
+let fileStatusPanel = {};
+
+let FileStatusType = {
+  ruleSet: "",
+  message: "",
+  issueCount: 0,
+  status: ""
+};
 
 let ruleBase = "https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html#rule_";
 
@@ -21,9 +32,33 @@ let issues = [];
  * Tests each XSD in the base-xsd/extension directory
  */
 function validateExtensionSchemas() {
+
+  reset();
+
   validateFile("http://localhost:8080/base-xsd/extension/extension.xsd");
   validateFile("http://localhost:8080/base-xsd/extension/test-1.xsd");
   validateFile("http://localhost:8080/base-xsd/extension/test-2.xsd");
+}
+
+function reset() {
+
+  fileStatusPanel = {};
+  issues = [];
+
+  let tbl = document.getElementById("status");
+  while (tbl.rows.length > 1) {
+    tbl.deleteRow(1);
+  }
+
+  // Clear issue results table
+  tbl = document.getElementById("log");
+  while (tbl.rows.length > 1) {
+    tbl.deleteRow(1);
+  }
+
+  // Remove badge and issue count
+  document.getElementById("svg").innerHTML = null;
+  document.getElementById("issue-count").innerHTML = null;
 }
 
 /**
@@ -35,17 +70,113 @@ function validateExtensionSchemas() {
  */
 function validateFile(xsdPath) {
 
-  let fileName = xsdPath.split("/").pop();
+  let fileName = getFileName(xsdPath);
 
+  // Add the file to the loading queue
   loading[fileName] = true;
 
   // Set status for the file
   addStatus(fileName, "", "Loading...");
 
-  // Load the input schema
-  loadSchema(xsdPath, fileName);
+  // Load the input schema.  Will trigger the XSLT once loaded.
+  loadSchema(xsdPath);
+}
 
-  let ndrPath = "http://localhost:8080/assets/ndr/ndr-rules-conformance-target-ext.sef";
+/**
+ * Get the file name plus extension from the given path.
+ *
+ * @param {string} filePath
+ */
+function getFileName(filePath) {
+  return filePath.split("/").pop();
+}
+
+
+function loadSchema(xsdPath) {
+
+  let fileName = getFileName(xsdPath);
+
+  let schemaFile = new XMLHttpRequest();
+  schemaFile.open("GET", xsdPath, true);
+  schemaFile.send(null);
+
+  schemaFile.onreadystatechange = function() {
+    if (schemaFile.readyState === 4 && schemaFile.status == 200) {
+      xsdDocuments[fileName] = schemaFile.responseXML;
+      textDocuments[fileName] = schemaFile.responseText;
+
+      let xsltPath = getXSLTPath(fileName);
+
+      runXSLT(xsdPath, xsltPath);
+    }
+  };
+}
+
+function getXSLTPath(xsdFileName) {
+
+  /** @type {Document} */
+  let xsdDocument = xsdDocuments[xsdFileName];
+
+  let xslBase = "http://localhost:8080/assets/ndr/";
+  let ndrTargetBase = "http://reference.niem.gov/niem/specification/naming-and-design-rules/";
+
+  let fileStatus = fileStatusPanel[xsdFileName];
+  let userSelection = document.getElementById("ruleSet");
+
+  if (userSelection.value == "NDR-4.0-EXT") {
+    fileStatus.ruleSet = "NDR 4.0 EXT";
+    fileStatus.message = "Rule set selected by user";
+    return xslBase + "NDR-4.0-EXT.sef";
+  }
+  else if (userSelection.value == "NDR-4.0-REF") {
+    fileStatus.ruleSet = "NDR 4.0 REF";
+    fileStatus.message = "Rule set selected by user";
+    return xslBase + "NDR-4.0-REF.sef";
+  }
+
+
+  // Find the ct:conformanceTargets attribute on the schema
+  let targets = xsdDocument.documentElement.getAttributeNS("http://release.niem.gov/niem/conformanceTargets/3.0/", "conformanceTargets");
+
+
+  // NDR 4.0 EXT
+  if (targets.includes(ndrTargetBase + "4.0/#ExtensionSchemaDocument")) {
+    fileStatus.ruleSet = "NDR 4.0 EXT";
+    fileStatus.message = "Auto-detected from conformanceTargets attribute";
+    return xslBase + "NDR-4.0-EXT.sef";
+  }
+
+  // NDR 4.0 REF
+  if (targets.includes(ndrTargetBase + "4.0/#ReferenceSchemaDocument")) {
+    fileStatus.ruleSet = "NDR 4.0 REF";
+    fileStatus.message = "Auto-detected from conformanceTargets attribute";
+    return xslBase + "NDR-4.0-REF.sef";
+  }
+
+  // NDR 3.0 EXT
+  if (targets.includes(ndrTargetBase + "3.0/#ExtensionSchemaDocument")) {
+    fileStatus.ruleSet = "NDR 4.0 EXT";
+    fileStatus.message = "Closest match - NDR 3.0 validation not currently supported";
+    return xslBase + "NDR-4.0-EXT.sef";
+  }
+
+  // NDR 3.0 REF
+  if (targets.includes(ndrTargetBase + "3.0/#ReferenceSchemaDocument")) {
+    fileStatus.ruleSet = "NDR 4.0 REF";
+    fileStatus.message = "Closest match - NDR 3.0 validation not currently supported";
+    return xslBase + "NDR-4.0-REF.sef";
+  }
+
+  // Default for no target specified
+  fileStatus.ruleSet = "NDR 4.0 EXT";
+  fileStatus.message = "Default - no conformance target specified"
+  return xslBase + "NDR-4.0-EXT.sef";
+
+}
+
+function runXSLT(xsdPath, ndrPath) {
+
+  let fileName = getFileName(xsdPath);
 
   // Run the XSLT to get conformance test results
   SaxonJS.transform({
@@ -53,11 +184,14 @@ function validateFile(xsdPath) {
       sourceLocation: xsdPath
     },
     resultElement => {
+
+      let fileStatus = fileStatusPanel[fileName];
+
       // Parse the SVRL results of the XSLT transform
-      let issueCount = parseIssues(fileName, resultElement, "log");
+      fileStatus.issueCount = parseIssues(fileName, resultElement, "log");
 
       // Remove loading message
-      updateStatus(fileName, "NDR 4.0 EXT", issueCount);
+      updateStatus(fileName, fileStatus);
     });
 }
 
@@ -65,10 +199,12 @@ function addStatus(fileName, ruleSet, status) {
 
   let cellFileName = document.createElement("td");
   let cellRuleSet = document.createElement("td");
+  let cellMessage = document.createElement("td");
   let cellStatus = document.createElement("td");
 
   cellFileName.innerHTML = fileName;
   cellRuleSet.innerHTML = ruleSet;
+  cellMessage.innerHTML = "";
   cellStatus.innerHTML = status;
 
   let tbl = document.getElementById("status").children[0];
@@ -78,33 +214,38 @@ function addStatus(fileName, ruleSet, status) {
   row.setAttribute("class", "table-warning");
   row.appendChild(cellFileName);
   row.appendChild(cellRuleSet);
+  row.appendChild(cellMessage);
   row.appendChild(cellStatus);
 
   tbl.appendChild(row);
+
+  fileStatusPanel[fileName] = {
+    status: "Loading..."
+  };
 }
 
 /**
  * Update the file status with a pass/fail message and row highlighting.
  *
  * @param {string} fileName
- * @param {string} ruleSet
- * @param {number} issueCount
+ * @param {FileStatusType} fileStatus
  */
-function updateStatus(fileName, ruleSet, issueCount) {
+function updateStatus(fileName, fileStatus) {
 
   let row = document.getElementById("status." + fileName);
 
-  let msg = "All tests passed";
+  let status = "All tests passed";
   let style = "table-success";
 
-  if (issueCount != 0) {
-    msg = issueCount + " tests failed";
+  if (fileStatus.issueCount != 0) {
+    status = fileStatus.issueCount + " tests failed";
     style = "table-danger";
   }
 
   // Update cell values
-  row.children[1].innerHTML = ruleSet;
-  row.children[2].innerHTML = msg;
+  row.children[1].innerHTML = fileStatus.ruleSet;
+  row.children[2].innerHTML = fileStatus.message;
+  row.children[3].innerHTML = status;
 
   // Set row style
   row.setAttribute("class", style);
@@ -125,7 +266,8 @@ function loaded() {
   enableLink("download-badge");
 
   let issueCount = document.getElementById("issue-count");
-  issueCount.innerText = `(${issues.length})`;
+  issueCount.innerText = issues.length;
+  issueCount.classList.add(issues.length == 0 ? "badge-success" : "badge-danger");
 
   let div = document.getElementById("svg");
   div.innerHTML = getBadge();
@@ -164,20 +306,6 @@ function saveBadge() {
   saveAs(blob, "niem-ndr-badge.svg");
 }
 
-function loadSchema(xsdPath, fileName) {
-
-  let schemaFile = new XMLHttpRequest();
-  schemaFile.open("GET", xsdPath, true);
-  schemaFile.send(null);
-
-  schemaFile.onreadystatechange = function() {
-    if (schemaFile.readyState === 4 && schemaFile.status == 200) {
-      xsdDocuments[fileName] = schemaFile.responseXML;
-      textDocuments[fileName] = schemaFile.responseText;
-    }
-  };
-}
-
 /**
  * @param {string} fileName
  * @param {HTMLElement} svrl
@@ -197,9 +325,10 @@ function parseIssues(fileName, svrl, tableID) {
     // Get the matching component node from the XSD document
     let xPath = failedAssert.attributes["location"].nodeValue;
     let componentNode = getComponentNode(xsdDocument, xPath);
+    let nameAttribute = componentNode.attributes["name"];
 
     // Set row field values
-    let name = componentNode.attributes["name"].nodeValue;
+    let name = nameAttribute ? nameAttribute.nodeValue : "";
     let kind = componentNode.localName;
     let msg = failedAssert.textContent;
     let [rule, description] = msg.split(": ");
@@ -258,9 +387,12 @@ function getComponentNode(xsdDocument, xpath) {
  * Returns the node or recurses on the parent node until it reaches a node
  * that contains a "name" attribute.
  *
- * @param {Node} node
+ * @param {HTMLElement} node
  */
 function getComponentRootNode(node) {
+  if (node.localName == "schema") {
+    return node;
+  }
   return node.attributes["name"] ? node : getComponentRootNode(node.parentNode);
 }
 
