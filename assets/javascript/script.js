@@ -3,6 +3,8 @@ let loading = {};
 let xsdDocuments = {};
 let textDocuments = {};
 
+let ruleBase = "https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html#rule_";
+
 let IssueType = {
   fileName: "",
   lineNumber: 0,
@@ -141,9 +143,14 @@ function enableLink(linkID) {
 
 function saveIssues() {
 
-  let csv = ['FileName, LineNumber, Component, Name, Rule, Description'];
+  let csv = ['FileName,LineNumber,Component,Name,Rule,Link,Description'];
+
   issues.forEach( issue => {
-    csv.push( `${issue.fileName}, ${issue.lineNumber}, ${issue.component}, ${issue.name}, ${issue.rule}, ${issue.description}` );
+    let link = `"=HYPERLINK(""${ruleBase}${issue.rule}"",""Rule ${issue.rule}"")"`;
+
+    let row = `${issue.fileName},${issue.lineNumber},${issue.component},${issue.name},Rule ${issue.rule},${link},${issue.description}`;
+
+    csv.push(row);
   });
 
   let blob = new Blob([csv.join("\n")],
@@ -276,7 +283,7 @@ function addRow(tableNode, issue) {
   cellLineNumber.innerHTML = issue.lineNumber;
   cellComponent.innerHTML = issue.component;
   cellName.innerHTML = issue.name;
-  cellRule.innerHTML = issue.rule;
+  cellRule.innerHTML = `<a href="${ruleBase}${issue.rule}" target="_blank">${issue.rule}</a>`;
   cellDescription.innerHTML = issue.description;
 
   let row = tableNode.appendChild( document.createElement("tr") );
