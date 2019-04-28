@@ -1,20 +1,32 @@
 
 let loading = {};
-let xsdDocuments = {};
-let xslMatches = {};
-let textDocuments = {};
 
-/** @type {Object<string, FileStatusType} */
-let fileStatusPanel = {};
+let ruleBase = "https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html#rule_";
 
-let FileStatusType = {
+/** @type {Object<string, FileMetadataType} */
+let fileMetadataTracker = {};
+
+let FileMetadataType = {
+  name: "",
+  size: "",
+  lastModified: "",
+  xsltPath: "",
   ruleSet: "",
   message: "",
   issueCount: 0,
-  status: ""
-};
+  status: "",
 
-let ruleBase = "https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html#rule_";
+  /** @type {string} */
+  text: "",
+  /** @type {XMLDocument} */
+  xml: null,
+
+  /** @type {"success"|"danger"|"warning"|"secondary"} */
+  style: "",
+
+  /** @type {IssueType[]} */
+  issues: []
+};
 
 let IssueType = {
   fileName: "",
@@ -28,23 +40,97 @@ let IssueType = {
 /** @type {IssueType[]} */
 let issues = [];
 
+
 /**
- * Tests each XSD in the base-xsd/extension directory
  */
-function validateExtensionSchemas() {
+function loadFiles() {
 
-  reset();
+  /** @type {FileList} */
+  let files = document.getElementById("files").files;
 
-  validateFile("http://localhost:8080/base-xsd/extension/extension.xsd");
-  validateFile("http://localhost:8080/base-xsd/extension/test-1.xsd");
-  validateFile("http://localhost:8080/base-xsd/extension/test-2.xsd");
+  if (files.length == 0) {
+    // Stop processing if no files have been loaded
+    return;
+  }
+
+  // Update the number of files selected
+  setFileMessage(files);
+
+
+  for (let file of files) {
+    let date = new Date(file.lastModified);
+    let timestamp = date.toLocaleString();
+
+
+    // TODO: Refactor
+    loading[file.name] = true;
+    addStatus(file.name, "", "Loading...");
+
+
+
+    /** @type {FileMetadataType} */
+    let fileMetadata = {
+      name: file.name,
+      size: file.size,
+      lastModified: timestamp,
+      status: file.name.endsWith(".xsd") ? "Loading..." : "Not a XML schema file",
+      style: file.name.endsWith(".xsd") ? "warning" : "secondary",
+      issues: []
+    };
+
+    fileMetadataTracker[file.name] = fileMetadata;
+
+    // Read file as text
+    let fileReader = new FileReader();
+
+    fileReader.onload = (function (xsd) {
+      return function (evt) {
+        let fileMetadata = fileMetadataTracker[file.name];
+
+        let xsdString = evt.target.result;
+        fileMetadataTracker[file.name].text = xsdString;
+
+        // TODO: Read file as XMLDocument and trigger validation when done
+        let parser = new DOMParser();
+
+        /** @type {XMLDocument} */
+        let xsdDoc = parser.parseFromString(xsdString, "text/xml");
+        // let xsdDoc = $.parseXML(xsdString);
+
+
+        fileMetadataTracker[file.name].xml = xsdDoc;
+
+        let xsltPath = getXSLTPath(fileMetadata);
+        fileMetadataTracker[file.name].xsltPath = xsltPath;
+
+        runXSLT(file.name);
+      }
+    })(file);
+
+    fileReader.readAsText(file);
+
+  }
 }
 
-function reset() {
+/**
+ * Reset the results display and re-process the files.
+ */
+function reloadFiles() {
+  resetResults();
+  loadFiles();
+}
 
-  fileStatusPanel = {};
+/**
+ * Reset the display to remove previous file status and validation result
+ * information.
+ */
+function resetResults() {
+
+  // Reset data
+  fileMetadataTracker = {};
   issues = [];
 
+  // Clear the file status table
   let tbl = document.getElementById("status");
   while (tbl.rows.length > 1) {
     tbl.deleteRow(1);
@@ -56,39 +142,20 @@ function reset() {
     tbl.deleteRow(1);
   }
 
-  // Remove badge and issue count
+  // Remove status badge
   document.getElementById("svg").innerHTML = null;
-  document.getElementById("issue-count").innerHTML = null;
-}
 
-/**
- * Adds the file name from the given xsdPath to the status page element as loading.
- * Loads the XSD file at the given xsdPath as an XML document.
- * Starts the XSLT transformation.
- *
- * @param {string} xsdPath
- */
-function validateFile(xsdPath) {
+  // Reset issue count
+  let issueCount = document.getElementById("issue-count")
+  issueCount.innerHTML = null;
+  issueCount.classList.remove("badge-danger");
+  issueCount.classList.remove("badge-success");
+  issueCount.classList.remove("badge-warning");
 
-  let fileName = getFileName(xsdPath);
+  // Disable downloads
+  disableLink("download-issues");
+  disableLink("download-badge");
 
-  // Add the file to the loading queue
-  loading[fileName] = true;
-
-  // Set status for the file
-  addStatus(fileName, "", "Loading...");
-
-  // Load the input schema.  Will trigger the XSLT once loaded.
-  loadSchema(xsdPath);
-}
-
-/**
- * Get the file name plus extension from the given path.
- *
- * @param {string} filePath
- */
-function getFileName(filePath) {
-  return filePath.split("/").pop();
 }
 
 
@@ -112,25 +179,27 @@ function loadSchema(xsdPath) {
   };
 }
 
-function getXSLTPath(xsdFileName) {
+/**
+ *
+ * @param {FileMetadataType} fileMetadata
+ */
+function getXSLTPath(fileMetadata) {
 
-  /** @type {Document} */
-  let xsdDocument = xsdDocuments[xsdFileName];
+  let xsdDocument = fileMetadata.xml;
 
-  let xslBase = "http://localhost:8080/assets/ndr/";
+  let xslBase = document.URL.replace("index.html", "") + "assets/ndr/";
   let ndrTargetBase = "http://reference.niem.gov/niem/specification/naming-and-design-rules/";
 
-  let fileStatus = fileStatusPanel[xsdFileName];
   let userSelection = document.getElementById("ruleSet");
 
   if (userSelection.value == "NDR-4.0-EXT") {
-    fileStatus.ruleSet = "NDR 4.0 EXT";
-    fileStatus.message = "Rule set selected by user";
+    fileMetadata.ruleSet = "NDR 4.0 EXT";
+    fileMetadata.message = "Rule set selected by user";
     return xslBase + "NDR-4.0-EXT.sef";
   }
   else if (userSelection.value == "NDR-4.0-REF") {
-    fileStatus.ruleSet = "NDR 4.0 REF";
-    fileStatus.message = "Rule set selected by user";
+    fileMetadata.ruleSet = "NDR 4.0 REF";
+    fileMetadata.message = "Rule set selected by user";
     return xslBase + "NDR-4.0-REF.sef";
   }
 
@@ -141,57 +210,58 @@ function getXSLTPath(xsdFileName) {
 
   // NDR 4.0 EXT
   if (targets.includes(ndrTargetBase + "4.0/#ExtensionSchemaDocument")) {
-    fileStatus.ruleSet = "NDR 4.0 EXT";
-    fileStatus.message = "Auto-detected from conformanceTargets attribute";
+    fileMetadata.ruleSet = "NDR 4.0 EXT";
+    fileMetadata.message = "Auto-detected from conformanceTargets attribute";
     return xslBase + "NDR-4.0-EXT.sef";
   }
 
   // NDR 4.0 REF
   if (targets.includes(ndrTargetBase + "4.0/#ReferenceSchemaDocument")) {
-    fileStatus.ruleSet = "NDR 4.0 REF";
-    fileStatus.message = "Auto-detected from conformanceTargets attribute";
+    fileMetadata.ruleSet = "NDR 4.0 REF";
+    fileMetadata.message = "Auto-detected from conformanceTargets attribute";
     return xslBase + "NDR-4.0-REF.sef";
   }
 
   // NDR 3.0 EXT
   if (targets.includes(ndrTargetBase + "3.0/#ExtensionSchemaDocument")) {
-    fileStatus.ruleSet = "NDR 4.0 EXT";
-    fileStatus.message = "Closest match - NDR 3.0 validation not currently supported";
+    fileMetadata.ruleSet = "NDR 4.0 EXT";
+    fileMetadata.message = "Closest match - NDR 3.0 validation not currently supported";
     return xslBase + "NDR-4.0-EXT.sef";
   }
 
   // NDR 3.0 REF
   if (targets.includes(ndrTargetBase + "3.0/#ReferenceSchemaDocument")) {
-    fileStatus.ruleSet = "NDR 4.0 REF";
-    fileStatus.message = "Closest match - NDR 3.0 validation not currently supported";
+    fileMetadata.ruleSet = "NDR 4.0 REF";
+    fileMetadata.message = "Closest match - NDR 3.0 validation not currently supported";
     return xslBase + "NDR-4.0-REF.sef";
   }
 
   // Default for no target specified
-  fileStatus.ruleSet = "NDR 4.0 EXT";
-  fileStatus.message = "Default - no conformance target specified"
+  fileMetadata.ruleSet = "NDR 4.0 EXT";
+  fileMetadata.message = "Default - no conformance target specified"
   return xslBase + "NDR-4.0-EXT.sef";
 
 }
 
-function runXSLT(xsdPath, ndrPath) {
+/**
+ * @param {string} fileName
+ */
+function runXSLT(fileName) {
 
-  let fileName = getFileName(xsdPath);
+  let fileMetadata = fileMetadataTracker[fileName];
 
   // Run the XSLT to get conformance test results
   SaxonJS.transform({
-      stylesheetLocation: ndrPath,
-      sourceLocation: xsdPath
+      stylesheetLocation: fileMetadata.xsltPath,
+      sourceText: fileMetadata.text
     },
     resultElement => {
 
-      let fileStatus = fileStatusPanel[fileName];
-
       // Parse the SVRL results of the XSLT transform
-      fileStatus.issueCount = parseIssues(fileName, resultElement, "log");
+      fileMetadata.issueCount = parseIssues(fileName, resultElement, "log");
 
       // Remove loading message
-      updateStatus(fileName, fileStatus);
+      updateStatus(fileName, fileMetadata);
     });
 }
 
@@ -219,7 +289,7 @@ function addStatus(fileName, ruleSet, status) {
 
   tbl.appendChild(row);
 
-  fileStatusPanel[fileName] = {
+  fileMetadataTracker[fileName] = {
     status: "Loading..."
   };
 }
@@ -228,7 +298,7 @@ function addStatus(fileName, ruleSet, status) {
  * Update the file status with a pass/fail message and row highlighting.
  *
  * @param {string} fileName
- * @param {FileStatusType} fileStatus
+ * @param {FileMetadataType} fileStatus
  */
 function updateStatus(fileName, fileStatus) {
 
@@ -271,16 +341,31 @@ function loaded() {
 
   let div = document.getElementById("svg");
   div.innerHTML = getBadge();
+
+  document.getElementById("reload").removeAttribute("disabled");
 }
 
 /**
- * Gets the HTML element with the given linkID.
+ * Gets the document element with the given linkID.
  * Removes the "disabled" attribute and adds "href" attribute as "#".
+ * @param {string} linkID
  */
 function enableLink(linkID) {
   let link = document.getElementById(linkID);
   link.removeAttribute("disabled");
   link.setAttribute("href", "#");
+}
+
+
+/**
+ * Gets the document element with the given linkID.
+ * Adds the "disabled" attribute and removes the "href" attribute.
+ * @param {string} linkID
+ */
+function disableLink(linkID) {
+  let link = document.getElementById(linkID);
+  link.removeAttribute("href");
+  link.setAttribute("disabled", true);
 }
 
 function saveIssues() {
@@ -319,12 +404,11 @@ function parseIssues(fileName, svrl, tableID) {
 
   for (let failedAssert of failedAsserts) {
 
-    /** @type {HTMLElement} */
-    let xsdDocument = xsdDocuments[fileName];
+    let fileMetadata = fileMetadataTracker[fileName];
 
     // Get the matching component node from the XSD document
     let xPath = failedAssert.attributes["location"].nodeValue;
-    let componentNode = getComponentNode(xsdDocument, xPath);
+    let componentNode = getComponentNode(fileMetadata.xml, xPath);
     let nameAttribute = componentNode.attributes["name"];
 
     // Set row field values
@@ -336,7 +420,7 @@ function parseIssues(fileName, svrl, tableID) {
 
     // Get the line number
     let re = new RegExp(`${kind}\\s*name=.${name}`)
-    let lineNumber = getLineNumber(textDocuments[fileName], re);
+    let lineNumber = getLineNumber(fileMetadata.text, re);
 
     /** @type {IssueType} */
     let issue = {
@@ -350,6 +434,7 @@ function parseIssues(fileName, svrl, tableID) {
 
     // Add row to the issue list and HTML issue table
     issues.push(issue);
+    fileMetadata.issues.push(issue);
     addRow(table, issue);
   }
 
@@ -427,6 +512,28 @@ function addRow(tableNode, issue) {
   row.appendChild(cellRule);
   row.appendChild(cellDescription);
 
+}
+
+
+/**
+ * Update the document's fileMessage label with the number of files selected
+ * @param {FileList} files
+ */
+function setFileMessage(files) {
+
+  let msg;
+
+  if (files.length == 0) {
+    msg = "No files chosen";
+  }
+  else if (files.length = 1) {
+    msg = "1 file chosen";
+  }
+  else {
+    msg = files.length + " files chosen";
+  }
+
+  document.getElementById("fileMessage").innerText = msg;
 }
 
 function getBadge() {

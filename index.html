@@ -17,22 +17,43 @@
       <h1>NDR Conformance Test Results</h1>
       <hr />
 
-      <div class="input-group input-group-sm">
-        <div class="input-group-prepend">
-          <label class="input-group-text" for="ruleSet">Choose NDR rule set:</label>
+      <form>
+        <div class="form">
+
+          <!-- Select NDR rule set -->
+          <div class="input-group input-group-sm">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="ruleSet">Rules:</label>
+            </div>
+            <select class="custom-select custom-select-sm" id="ruleSet" onchange="reloadFiles()">
+              <option value="auto" selected>Auto-detect</option>
+              <option value="NDR-4.0-EXT">NDR 4.0 EXT (for IEPD extension schemas)</option>
+              <option value="NDR-4.0-REF">NDR 4.0 REF (for reference and release schemas)</option>
+            </select>
+          </div>
+
+          <!-- Select files -->
+          <div class="input-group input-group-sm">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="files">Select Files: </label>
+            </div>
+            <div class="custom-file">
+              <input type="file" id="files" name="files[]" multiple onchange="loadFiles()" class="custom-file-input" accept=".xsd"/>
+              <label class="custom-file-label" for="files" id="fileMessage">No files chosen</label>
+            </div>
+            <div class="input-group-append">
+              <button id="reload" class="btn btn-outline-secondary" type="button" onclick="reloadFiles()" disabled title="Reload if selected files have been updated locally">Reload</button>
+            </div>
+          </div>
         </div>
-        <select class="custom-select" id="ruleSet" onchange="validateExtensionSchemas()">
-          <option value="auto" selected>Auto-detect</option>
-          <option value="NDR-4.0-EXT">NDR 4.0 EXT (for IEPD extension schemas)</option>
-          <option value="NDR-4.0-REF">NDR 4.0 REF (for reference and release schemas)</option>
-        </select>
-      </div>
+      </form>
       <br /><br />
 
       <div class="row">
         <div class="col">
-          <h2>Overall Status <span id="svg"></span></h2>
 
+          <!-- Status header and downloads -->
+          <h2>Overall Status <span id="svg"></span></h2>
           Download:
           <a id="download-issues" disabled onclick="saveIssues()">Issues</a> |
           <a id="download-badge" disabled onclick="saveBadge()">Badge</a>
@@ -49,9 +70,9 @@
           </table>
         </div>
       </div>
-
       <br/><br/>
 
+      <!-- Issue list table -->
       <h2>Issue List <span id="issue-count" class="badge badge-pill"></span></h2>
       <table id="log" class="table table-hover">
         <tr>
@@ -65,10 +86,6 @@
       </table>
 
     </div>
-
-    <script>
-      validateExtensionSchemas();
-    </script>
 
     <!-- Bootstrap scripts -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

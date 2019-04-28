@@ -15,3 +15,7 @@ h2 {
   white-space: nowrap;
   width: 70px;
 }
+
+.custom-file-label:after {
+  content: none;
+}

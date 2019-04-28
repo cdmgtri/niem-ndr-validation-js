@@ -15,8 +15,8 @@ This project uses Saxon-JS to transform NIEM XML schemas with pre-compiled NDR X
 - [x] Link results to NDR rules
 - [x] Support multiple NDR rule sets
 - [ ] User file selections
-  - [ ] Single file
-  - [ ] Multi-select files
+  - [x] Single file
+  - [x] Multi-select files
   - [ ] zip file
     - [ ] look for mpd-catalog for file instructions
 - [ ] Refactor Saxon-JS for Node.js implementation once available
