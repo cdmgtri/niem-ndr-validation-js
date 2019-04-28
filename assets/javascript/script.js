@@ -15,9 +15,8 @@ let FileMetadataType = {
   message: "",
   issueCount: 0,
   status: "",
-
-  /** @type {string} */
   text: "",
+
   /** @type {XMLDocument} */
   xml: null,
 
@@ -53,20 +52,21 @@ function loadFiles() {
     return;
   }
 
+  // Clear any previous result info from the display
+  resetResults();
+
   // Update the number of files selected
-  setFileMessage(files);
+  setFileInputMessage(files);
 
 
   for (let file of files) {
-    let date = new Date(file.lastModified);
-    let timestamp = date.toLocaleString();
-
 
     // TODO: Refactor
     loading[file.name] = true;
     addStatus(file.name, "", "Loading...");
 
-
+    let date = new Date(file.lastModified);
+    let timestamp = date.toLocaleString();
 
     /** @type {FileMetadataType} */
     let fileMetadata = {
@@ -80,30 +80,24 @@ function loadFiles() {
 
     fileMetadataTracker[file.name] = fileMetadata;
 
-    // Read file as text
+    // Process file contents
     let fileReader = new FileReader();
 
     fileReader.onload = (function (xsd) {
       return function (evt) {
-        let fileMetadata = fileMetadataTracker[file.name];
 
-        let xsdString = evt.target.result;
-        fileMetadataTracker[file.name].text = xsdString;
+        // Save file as text
+        fileMetadata.text = evt.target.result;
 
-        // TODO: Read file as XMLDocument and trigger validation when done
+        // Save file as XMLDocument
         let parser = new DOMParser();
+        fileMetadata.xml = parser.parseFromString(fileMetadata.text, "text/xml");;
 
-        /** @type {XMLDocument} */
-        let xsdDoc = parser.parseFromString(xsdString, "text/xml");
-        // let xsdDoc = $.parseXML(xsdString);
+        // Choose which NDR stylesheet to use for this XSD file
+        fileMetadata.xsltPath = getXSLTPath(fileMetadata);
 
-
-        fileMetadataTracker[file.name].xml = xsdDoc;
-
-        let xsltPath = getXSLTPath(fileMetadata);
-        fileMetadataTracker[file.name].xsltPath = xsltPath;
-
-        runXSLT(file.name);
+        // Run NDR rules on file
+        testNDRConformance(fileMetadata);
       }
     })(file);
 
@@ -112,13 +106,6 @@ function loadFiles() {
   }
 }
 
-/**
- * Reset the results display and re-process the files.
- */
-function reloadFiles() {
-  resetResults();
-  loadFiles();
-}
 
 /**
  * Reset the display to remove previous file status and validation result
@@ -159,53 +146,43 @@ function resetResults() {
 }
 
 
-function loadSchema(xsdPath) {
-
-  let fileName = getFileName(xsdPath);
-
-  let schemaFile = new XMLHttpRequest();
-  schemaFile.open("GET", xsdPath, true);
-  schemaFile.send(null);
-
-  schemaFile.onreadystatechange = function() {
-    if (schemaFile.readyState === 4 && schemaFile.status == 200) {
-      xsdDocuments[fileName] = schemaFile.responseXML;
-      textDocuments[fileName] = schemaFile.responseText;
-
-      let xsltPath = getXSLTPath(fileName);
-
-      runXSLT(xsdPath, xsltPath);
-    }
-  };
-}
-
 /**
+ * Determine which NDR rule set should be used based on the user selection
+ * or the XML schema contents (e.g., conformance targets attribute).
+ *
+ * Update the file metadata with the rule set used and a message about
+ * how that rule set was chosen.
+ *
+ * Currently only supports NDR 4.0 REF and EXT rules.
+ * Defaults to NDR 4.0 EXT if no user selection or conformance target is provided.
  *
  * @param {FileMetadataType} fileMetadata
+ * @return {string} - The path to the NDR stylesheet
  */
 function getXSLTPath(fileMetadata) {
 
-  let xsdDocument = fileMetadata.xml;
+  // User's NDR selection
+  let selectedNDR = document.getElementById("ruleSet");
 
+  // Base stylesheet path
   let xslBase = document.URL.replace("index.html", "") + "assets/ndr/";
+
+  // Base NDR conformance target URL
   let ndrTargetBase = "http://reference.niem.gov/niem/specification/naming-and-design-rules/";
 
-  let userSelection = document.getElementById("ruleSet");
 
-  if (userSelection.value == "NDR-4.0-EXT") {
-    fileMetadata.ruleSet = "NDR 4.0 EXT";
+  if (selectedNDR.value != "auto") {
+    // Handle user-selected NDR rule set
+    fileMetadata.ruleSet = selectedNDR.value.replace("-", " ");
     fileMetadata.message = "Rule set selected by user";
-    return xslBase + "NDR-4.0-EXT.sef";
+    return xslBase + selectedNDR.value + ".sef";
   }
-  else if (userSelection.value == "NDR-4.0-REF") {
-    fileMetadata.ruleSet = "NDR 4.0 REF";
-    fileMetadata.message = "Rule set selected by user";
-    return xslBase + "NDR-4.0-REF.sef";
-  }
+
+  // User selected auto-detect: determine the best rule set to use
 
 
   // Find the ct:conformanceTargets attribute on the schema
-  let targets = xsdDocument.documentElement.getAttributeNS("http://release.niem.gov/niem/conformanceTargets/3.0/", "conformanceTargets");
+  let targets = fileMetadata.xml.documentElement.getAttributeNS("http://release.niem.gov/niem/conformanceTargets/3.0/", "conformanceTargets");
 
 
   // NDR 4.0 EXT
@@ -236,7 +213,7 @@ function getXSLTPath(fileMetadata) {
     return xslBase + "NDR-4.0-REF.sef";
   }
 
-  // Default for no target specified
+  // Default to NDR 4.0 EXT for no target specified
   fileMetadata.ruleSet = "NDR 4.0 EXT";
   fileMetadata.message = "Default - no conformance target specified"
   return xslBase + "NDR-4.0-EXT.sef";
@@ -244,26 +221,102 @@ function getXSLTPath(fileMetadata) {
 }
 
 /**
- * @param {string} fileName
+ * Runs the stylesheet transform to check NDR conformance of the XSD.
+ *
+ * @param {FileMetadataType} fileMetadata
  */
-function runXSLT(fileName) {
-
-  let fileMetadata = fileMetadataTracker[fileName];
+function testNDRConformance(fileMetadata) {
 
   // Run the XSLT to get conformance test results
   SaxonJS.transform({
       stylesheetLocation: fileMetadata.xsltPath,
       sourceText: fileMetadata.text
     },
-    resultElement => {
-
-      // Parse the SVRL results of the XSLT transform
-      fileMetadata.issueCount = parseIssues(fileName, resultElement, "log");
-
-      // Remove loading message
-      updateStatus(fileName, fileMetadata);
-    });
+    resultElement => processResults(fileMetadata, resultElement)
+  );
 }
+
+
+/**
+ * Parses the output of the NDR stylesheet transform into the issues
+ * array and updates the page file status and issues list.
+ *
+ * @param {FileMetadataType} fileMetadata
+ * @param {HTMLElement} svrl
+ */
+function processResults(fileMetadata, svrl) {
+
+  // Parse the SVRL results of the XSLT transform
+  fileMetadata.issueCount = parseIssues(fileMetadata, svrl);
+
+  // Add file issues to the full issue array
+  issues.push(...fileMetadata.issues);
+
+  // Add file issues to the page issue table
+  let table = document.getElementById("log").firstElementChild;
+  fileMetadata.issues.forEach( issue => addRow(table, issue) );
+
+  // Update the overall file status with the results summary
+  updateStatus(fileMetadata);
+
+  // Remove file from the loading queue
+  delete loading[fileMetadata.name];
+
+  // Run final processing if the loading queue is now empty.
+  if (Object.keys(loading).length == 0) {
+    loaded();
+  }
+}
+
+
+/**
+ * Parses the results of the NDR stylesheet transform (a SVRL file)
+ * into an issues array.
+ *
+ * @param {FileMetadataType} fileMetadata
+ * @param {HTMLElement} svrl
+ * @return {number} - The number of issues for the given file
+ */
+function parseIssues(fileMetadata, svrl) {
+
+  let failedAsserts = svrl.getElementsByTagName("svrl:failed-assert");
+
+  for (let failedAssert of failedAsserts) {
+
+    // Get the matching component node from the XSD document
+    let xPath = failedAssert.attributes["location"].nodeValue;
+    let componentNode = getComponentNode(fileMetadata.xml, xPath);
+    let componentNameAttribute = componentNode.attributes["name"];
+
+    // Set issue values
+    let name = componentNameAttribute ? componentNameAttribute.nodeValue : "";
+    let kind = componentNode.localName;
+    let msg = failedAssert.textContent;
+    let [rule, description] = msg.split(": ");
+    rule = rule.replace("Rule ", "");
+
+    // Get the XSD line number of the issue
+    let re = new RegExp(`${kind}\\s*name=.${name}`)
+    let lineNumber = getLineNumber(fileMetadata.text, re);
+
+    /** @type {IssueType} */
+    let issue = {
+      fileName: fileMetadata.name,
+      lineNumber,
+      component: kind,
+      name,
+      rule,
+      description
+    };
+
+    // Add row to the issue list and HTML issue table
+    fileMetadata.issues.push(issue);
+  }
+
+  return failedAsserts.length;
+}
+
+
 
 function addStatus(fileName, ruleSet, status) {
 
@@ -297,53 +350,52 @@ function addStatus(fileName, ruleSet, status) {
 /**
  * Update the file status with a pass/fail message and row highlighting.
  *
- * @param {string} fileName
- * @param {FileMetadataType} fileStatus
+ * @param {FileMetadataType} fileMetadata
  */
-function updateStatus(fileName, fileStatus) {
+function updateStatus(fileMetadata) {
 
-  let row = document.getElementById("status." + fileName);
+  let row = document.getElementById("status." + fileMetadata.name);
 
   let status = "All tests passed";
   let style = "table-success";
 
-  if (fileStatus.issueCount != 0) {
-    status = fileStatus.issueCount + " tests failed";
+  if (fileMetadata.issueCount != 0) {
+    status = fileMetadata.issueCount + " tests failed";
     style = "table-danger";
   }
 
   // Update cell values
-  row.children[1].innerHTML = fileStatus.ruleSet;
-  row.children[2].innerHTML = fileStatus.message;
+  row.children[1].innerHTML = fileMetadata.ruleSet;
+  row.children[2].innerHTML = fileMetadata.message;
   row.children[3].innerHTML = status;
 
   // Set row style
   row.setAttribute("class", style);
-
-  // Remove file from loading queue and execute final processing if queue is empty.
-  delete loading[fileName];
-  if (Object.keys(loading).length == 0) {
-    loaded();
-  }
 }
 
+
 /**
- * Final processing after all data has loaded.
+ * Update the page after all of the issues have been processed.
  */
 function loaded() {
 
+  // Enable downloads
   enableLink("download-issues");
   enableLink("download-badge");
 
+  // Set the issue count badge
   let issueCount = document.getElementById("issue-count");
   issueCount.innerText = issues.length;
   issueCount.classList.add(issues.length == 0 ? "badge-success" : "badge-danger");
 
+  // Display the NDR NDR issue badge
   let div = document.getElementById("svg");
   div.innerHTML = getBadge();
 
+  // Enable the reload button
   document.getElementById("reload").removeAttribute("disabled");
 }
+
 
 /**
  * Gets the document element with the given linkID.
@@ -368,7 +420,12 @@ function disableLink(linkID) {
   link.setAttribute("disabled", true);
 }
 
-function saveIssues() {
+/**
+ * Generates a CSV of the issues.
+ *
+ * @returns {string}
+ */
+function getIssueCSV() {
 
   let csv = ['FileName,LineNumber,Component,Name,Rule,Link,Description'];
 
@@ -380,74 +437,42 @@ function saveIssues() {
     csv.push(row);
   });
 
+  return csv;
+}
+
+/**
+ * Lets the user download the issue list as a CSV.
+ *
+ */
+function saveIssues() {
+
+  let csv = getIssueCSV();
+
   let blob = new Blob([csv.join("\n")],
     {type: "text/csv;charset=UTF-8", encoding: "UTF-8"}
   );
+
   saveAs(blob, "ndr-conformance-results.csv");
 }
 
+/**
+ * Lets the user download the NIEM NDR conformance badge.
+ */
 function saveBadge() {
   let blob = new Blob([getBadge()], {type: "image/svg+xml;charset=utf-8"});
   saveAs(blob, "niem-ndr-badge.svg");
 }
 
-/**
- * @param {string} fileName
- * @param {HTMLElement} svrl
- * @param {string} tableID
- */
-function parseIssues(fileName, svrl, tableID) {
-
-  let table = document.getElementById(tableID).firstElementChild;
-
-  let failedAsserts = svrl.getElementsByTagName("svrl:failed-assert");
-
-  for (let failedAssert of failedAsserts) {
-
-    let fileMetadata = fileMetadataTracker[fileName];
-
-    // Get the matching component node from the XSD document
-    let xPath = failedAssert.attributes["location"].nodeValue;
-    let componentNode = getComponentNode(fileMetadata.xml, xPath);
-    let nameAttribute = componentNode.attributes["name"];
-
-    // Set row field values
-    let name = nameAttribute ? nameAttribute.nodeValue : "";
-    let kind = componentNode.localName;
-    let msg = failedAssert.textContent;
-    let [rule, description] = msg.split(": ");
-    rule = rule.replace("Rule ", "");
-
-    // Get the line number
-    let re = new RegExp(`${kind}\\s*name=.${name}`)
-    let lineNumber = getLineNumber(fileMetadata.text, re);
-
-    /** @type {IssueType} */
-    let issue = {
-      fileName,
-      lineNumber,
-      component: kind,
-      name,
-      rule,
-      description
-    };
-
-    // Add row to the issue list and HTML issue table
-    issues.push(issue);
-    fileMetadata.issues.push(issue);
-    addRow(table, issue);
-  }
-
-  return failedAsserts.length;
-
-}
 
 /**
- * Given a document string, counts the number of '\n' from the start to the
- * position of the given pattern.
+ * Calculates the line number of the given pattern in the given
+ * document string.
+ *
+ * Counts the number of '\n' preceding the pattern.
  *
  * @param {string} documentString
  * @param {RegExp} pattern
+ * @return {number}
  */
 function getLineNumber(documentString, pattern) {
   let index = documentString.search(pattern);
@@ -456,7 +481,9 @@ function getLineNumber(documentString, pattern) {
 }
 
 /**
- * Given an XSD document, returns the value from the given xpath.
+ * Given an XSD document, finds the node at the given xpath.
+ * Returns the component node (like a complexType or element node) that
+ * the match belongs to, or the root schema node itself.
  *
  * @param {HTMLElement} xsdDocument
  * @param {string} xpath
@@ -469,10 +496,13 @@ function getComponentNode(xsdDocument, xpath) {
 }
 
 /**
- * Returns the node or recurses on the parent node until it reaches a node
- * that contains a "name" attribute.
+ * Returns the given node or recurses on the parent node until it reaches
+ * a node that contains a "name" attribute.
+ *
+ * Returns the root schema node if the given node does not belong to a component.
  *
  * @param {HTMLElement} node
+ * @returns {HTMLElement}
  */
 function getComponentRootNode(node) {
   if (node.localName == "schema") {
@@ -519,29 +549,32 @@ function addRow(tableNode, issue) {
  * Update the document's fileMessage label with the number of files selected
  * @param {FileList} files
  */
-function setFileMessage(files) {
+function setFileInputMessage(files) {
 
-  let msg;
+  let msg = "No files chosen";
 
-  if (files.length == 0) {
-    msg = "No files chosen";
-  }
-  else if (files.length = 1) {
+  if (files.length == 1) {
     msg = "1 file chosen";
   }
-  else {
+  else if (files.length > 1) {
     msg = files.length + " files chosen";
   }
 
-  document.getElementById("fileMessage").innerText = msg;
+  document.getElementById("fileInputMessage").innerText = msg;
 }
+
 
 function getBadge() {
 
   let count = issues.length;
 
-  let color = count ? "#e05d44" : "#4c1";
-  // warning color: #dfb317
+  let Colors = {
+    SUCCESS: "#4c1",
+    ERROR: "#e05d44",
+    WARNING: "#dfb317"
+  }
+
+  let color = count ? Colors.ERROR : Colors.SUCCESS;
 
   let svg = `<svg
   xmlns="http://www.w3.org/2000/svg"
