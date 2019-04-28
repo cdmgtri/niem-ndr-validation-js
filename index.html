@@ -3,12 +3,19 @@
   <head>
     <title>NIEM JS NDR Validation</title>
 
+    <!-- Bootstrap stylesheet-->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
+
+    <!-- Font Awesome stylesheet -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+
+    <!-- Bootstrap Table plugin stylesheet -->
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.14.2/dist/bootstrap-table.min.css">
     <link rel="stylesheet" href="assets/styles/style.css"/>
 
-    <script type="text/javascript" language="javascript" src="./assets/javascript/Saxon-JS/SaxonJS.min.js"></script>
-    <script type="text/javascript" language="javascript" src="./assets/javascript/file-saver/dist/FileSaver.min.js"></script>
-    <script type="text/javascript" language="javascript" src="./assets/javascript/script.js"></script>
+    <!-- highlight.js -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/default.min.css">
+
   </head>
   <body>
 
@@ -75,13 +82,22 @@
           <h2>Overall Status <span id="svg"></span></h2>
 
           <!-- File status table -->
-          <table id="status" class="table table-width-auto">
-            <tr>
-              <th>File</th>
-              <th>Rule set</th>
-              <th>Message</th>
-              <th>Status</th>
-            </tr>
+          <table
+            id="fileStatus"
+            data-classes="table"
+            data-toggle="table"
+            data-id-field="name"
+            data-row-style="fileStatusStyle"
+            >
+            <thead>
+              <tr>
+                <th data-field="name">File</th>
+                <th data-field="status">Status</th>
+                <th data-field="ruleSet">Rule set</th>
+                <th data-field="message">Message</th>
+                <th data-field="lastModified">Last Modified</th>
+              </tr>
+            </thead>
           </table>
         </div>
       </div>
@@ -89,22 +105,55 @@
 
       <!-- Issue list table -->
       <h2>Issue List <span id="issue-count" class="badge badge-pill"></span></h2>
-      <table id="log" class="table table-hover">
-        <tr>
-          <th>File</th>
-          <th>Line</th>
-          <th>Component</th>
-          <th>Name</th>
-          <th class="td-no-wrap">Rule</th>
-          <th>Description</th>
-        </tr>
+      <table
+        id="issues"
+        data-toggle="table"
+        data-classes="table"
+        data-detail-view="true"
+        data-detail-filter="issueDetailsFilter"
+        data-detail-formatter="issueDetails"
+        >
+        <thead>
+          <tr>
+            <th data-field="fileName">File</th>
+            <th data-field="lineNumber">Line</th>
+            <th data-field="component">Component</th>
+            <th data-field="name">Name</th>
+            <th data-field="rule">Rule</th>
+            <th data-field="description">Description</th>
+          </tr>
+        </thead>
       </table>
+      <br><br>
 
     </div>
+
 
     <!-- Bootstrap scripts -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap Table plugin -->
+    <script src="https://unpkg.com/bootstrap-table@1.14.2/dist/bootstrap-table.min.js"></script>
+
+    <!-- Saxon JS -->
+    <script type="text/javascript" language="javascript" src="./assets/javascript/Saxon-JS/SaxonJS.min.js"></script>
+
+    <!-- FileSaver -->
+    <script type="text/javascript" language="javascript" src="./assets/javascript/file-saver/dist/FileSaver.min.js"></script>
+
+    <!-- highlight.js -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
+
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!-- App script -->
+    <script type="text/javascript" language="javascript" src="./assets/javascript/script.js"></script>
+
+    <script type="text/javascript">
+      $("#issues").bootstrapTable({data: []});
+      $("#fileStatus").bootstrapTable({data: []});
+    </script>
   </body>
 </html>

@@ -10,5 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/jquery": "^3.3.29"
+  }
 }

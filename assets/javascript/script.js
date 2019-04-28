@@ -8,6 +8,7 @@ let fileMetadataTracker = {};
 
 let FileMetadataType = {
   name: "",
+  isLoaded: false,
   size: "",
   lastModified: "",
   xsltPath: "",
@@ -20,9 +21,6 @@ let FileMetadataType = {
   /** @type {XMLDocument} */
   xml: null,
 
-  /** @type {"success"|"danger"|"warning"|"secondary"} */
-  style: "",
-
   /** @type {IssueType[]} */
   issues: []
 };
@@ -33,11 +31,19 @@ let IssueType = {
   component: "",
   name: "",
   rule: "",
-  description: ""
+  description: "",
+
+  /** @type {HTMLElement} */
+  node: null
 };
 
 /** @type {IssueType[]} */
 let issues = [];
+
+let doc = {
+  $issues: $("#issues"),
+  $fileStatus: $("#fileStatus")
+};
 
 
 /**
@@ -61,9 +67,8 @@ function loadFiles() {
 
   for (let file of files) {
 
-    // TODO: Refactor
+    // Add file name to the loading queue
     loading[file.name] = true;
-    addStatus(file.name, "", "Loading...");
 
     let date = new Date(file.lastModified);
     let timestamp = date.toLocaleString();
@@ -71,14 +76,16 @@ function loadFiles() {
     /** @type {FileMetadataType} */
     let fileMetadata = {
       name: file.name,
+      isLoaded: false,
       size: file.size,
       lastModified: timestamp,
       status: file.name.endsWith(".xsd") ? "Loading..." : "Not a XML schema file",
-      style: file.name.endsWith(".xsd") ? "warning" : "secondary",
       issues: []
     };
 
     fileMetadataTracker[file.name] = fileMetadata;
+
+    doc.$fileStatus.bootstrapTable("append", fileMetadata);
 
     // Process file contents
     let fileReader = new FileReader();
@@ -118,16 +125,10 @@ function resetResults() {
   issues = [];
 
   // Clear the file status table
-  let tbl = document.getElementById("status");
-  while (tbl.rows.length > 1) {
-    tbl.deleteRow(1);
-  }
+  doc.$fileStatus.bootstrapTable("removeAll");
 
-  // Clear issue results table
-  tbl = document.getElementById("log");
-  while (tbl.rows.length > 1) {
-    tbl.deleteRow(1);
-  }
+  // Clear the issue results table
+  doc.$issues.bootstrapTable("removeAll");
 
   // Remove status badge
   document.getElementById("svg").innerHTML = null;
@@ -253,8 +254,7 @@ function processResults(fileMetadata, svrl) {
   issues.push(...fileMetadata.issues);
 
   // Add file issues to the page issue table
-  let table = document.getElementById("log").firstElementChild;
-  fileMetadata.issues.forEach( issue => addRow(table, issue) );
+  doc.$issues.bootstrapTable("append", fileMetadata.issues);
 
   // Update the overall file status with the results summary
   updateStatus(fileMetadata);
@@ -306,7 +306,8 @@ function parseIssues(fileMetadata, svrl) {
       component: kind,
       name,
       rule,
-      description
+      description,
+      node: componentNode
     };
 
     // Add row to the issue list and HTML issue table
@@ -317,34 +318,86 @@ function parseIssues(fileMetadata, svrl) {
 }
 
 
+/**
+ * Row style function for the Bootstrap Table plugin.
+ *
+ * Returns the row style for the file status table based on its loading
+ * status and issue count.
+ *
+ * @param {FileMetadataType} fileMetadata
+ */
+function fileStatusStyle(fileMetadata) {
 
-function addStatus(fileName, ruleSet, status) {
+  // Style for file with conformance issues
+  let variant = "table-danger";
 
-  let cellFileName = document.createElement("td");
-  let cellRuleSet = document.createElement("td");
-  let cellMessage = document.createElement("td");
-  let cellStatus = document.createElement("td");
+  if (fileMetadata.isLoaded == false) {
+    // Style for file that is still loading
+    variant = "table-warning";
+  }
+  else if (fileMetadata.issues.length == 0) {
+    // Style for file with no conformance issues
+    variant = "table-success";
+  }
 
-  cellFileName.innerHTML = fileName;
-  cellRuleSet.innerHTML = ruleSet;
-  cellMessage.innerHTML = "";
-  cellStatus.innerHTML = status;
-
-  let tbl = document.getElementById("status").children[0];
-  let row = document.createElement("tr");
-
-  row.setAttribute("id", "status." + fileName);
-  row.setAttribute("class", "table-warning");
-  row.appendChild(cellFileName);
-  row.appendChild(cellRuleSet);
-  row.appendChild(cellMessage);
-  row.appendChild(cellStatus);
-
-  tbl.appendChild(row);
-
-  fileMetadataTracker[fileName] = {
-    status: "Loading..."
+  return {
+    classes: [variant]
   };
+}
+
+
+
+/**
+ * Detail formatter function for the Bootstrap Table plugin.
+ *
+ * Returns HTML displaying the issue's component XSD syntax for the
+ * issue table row expansion.
+ *
+ * @param {number} index
+ * @param {IssueType} issue
+ */
+function issueDetails(index, issue) {
+
+  let xsd = issue.node.outerHTML
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"", "")
+    .replace(" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"", "")
+    .replace(" xmlns:xs='http://www.w3.org/2001/XMLSchema'", "")
+    .replace(" xmlns:xsd='http://www.w3.org/2001/XMLSchema'", "")
+    .trim();
+
+  // The outerHTML loses the initial whitespace preceding the node, causing
+  // the first line of the XSD not to align with the rest of the code.
+
+  // Find the leading whitespace for the last line of the XSD text
+  let lastLine = xsd.split("\n").pop();
+  let leadingWhitespace = lastLine.split("&lt;");
+
+  if (leadingWhitespace.length > 0) {
+    // Add the leading whitespace to the front of the XSD block
+    xsd = leadingWhitespace[0] + xsd;
+  }
+
+  let html = `<pre><code lang='xml'>${xsd}</code></pre>`;
+  return html;
+}
+
+
+/**
+ * Detail filter function for the Bootstrap Table plugin.
+ *
+ * Determines whether or not the issue table row can be expanded
+ * for the user to view the related XSD.
+ *
+ * Returns true if the issue is for a component (type, element, or attribute).
+ * Returns false if the issue is schema-level.
+ *
+ * @param {number} index
+ * @param {IssueType} issue
+ */
+function issueDetailsFilter(index, issue) {
+  return issue.component != "schema";
 }
 
 /**
@@ -354,23 +407,22 @@ function addStatus(fileName, ruleSet, status) {
  */
 function updateStatus(fileMetadata) {
 
-  let row = document.getElementById("status." + fileMetadata.name);
-
-  let status = "All tests passed";
-  let style = "table-success";
-
-  if (fileMetadata.issueCount != 0) {
-    status = fileMetadata.issueCount + " tests failed";
-    style = "table-danger";
+  // Update the status message
+  if (fileMetadata.issues.length == 0) {
+    fileMetadata.status = "All tests passed";
+  }
+  else if (fileMetadata.issues.length == 1) {
+    fileMetadata.status = "1 test failed";
+  }
+  else {
+    fileMetadata.status = fileMetadata.issues.length + " tests failed";
   }
 
-  // Update cell values
-  row.children[1].innerHTML = fileMetadata.ruleSet;
-  row.children[2].innerHTML = fileMetadata.message;
-  row.children[3].innerHTML = status;
+  // Update the loading status
+  fileMetadata.isLoaded = true;
 
-  // Set row style
-  row.setAttribute("class", style);
+  // Update the table row
+  doc.$fileStatus.bootstrapTable("updateByUniqueId", fileMetadata.name, fileMetadata);
 }
 
 
@@ -509,39 +561,6 @@ function getComponentRootNode(node) {
     return node;
   }
   return node.attributes["name"] ? node : getComponentRootNode(node.parentNode);
-}
-
-/**
- *
- *
- * @param {Element} tableNode
- * @param {IssueType} issue
- */
-function addRow(tableNode, issue) {
-
-  let cellFileName = document.createElement("td");
-  let cellLineNumber = document.createElement("td");
-  let cellComponent = document.createElement("td");
-  let cellName = document.createElement("td");
-  let cellRule = document.createElement("td");
-  let cellDescription = document.createElement("td");
-
-  cellFileName.innerHTML = issue.fileName;
-  cellLineNumber.innerHTML = issue.lineNumber;
-  cellComponent.innerHTML = issue.component;
-  cellName.innerHTML = issue.name;
-  cellRule.innerHTML = `<a href="${ruleBase}${issue.rule}" target="_blank">${issue.rule}</a>`;
-  cellDescription.innerHTML = issue.description;
-
-  let row = tableNode.appendChild( document.createElement("tr") );
-
-  row.appendChild(cellFileName);
-  row.appendChild(cellLineNumber);
-  row.appendChild(cellComponent);
-  row.appendChild(cellName);
-  row.appendChild(cellRule);
-  row.appendChild(cellDescription);
-
 }
 
 
