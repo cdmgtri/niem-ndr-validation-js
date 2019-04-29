@@ -28,13 +28,14 @@ let FileMetadataType = {
 let IssueType = {
   fileName: "",
   lineNumber: 0,
-  component: "",
-  name: "",
+  component: {
+    kind: "",
+    name: "",
+    /** @type {HTMLElement} */
+    node: null
+  },
   rule: "",
-  description: "",
-
-  /** @type {HTMLElement} */
-  node: null
+  description: ""
 };
 
 /** @type {IssueType[]} */
@@ -303,11 +304,13 @@ function parseIssues(fileMetadata, svrl) {
     let issue = {
       fileName: fileMetadata.name,
       lineNumber,
-      component: kind,
-      name,
+      component: {
+        kind,
+        name,
+        node: componentNode
+      },
       rule,
-      description,
-      node: componentNode
+      description
     };
 
     // Add row to the issue list and HTML issue table
@@ -397,7 +400,7 @@ function issueDetails(index, issue) {
  * @param {IssueType} issue
  */
 function issueDetailsFilter(index, issue) {
-  return issue.component != "schema";
+  return issue.component.kind != "schema";
 }
 
 /**
@@ -484,7 +487,7 @@ function getIssueCSV() {
   issues.forEach( issue => {
     let link = `"=HYPERLINK(""${ruleBase}${issue.rule}"",""Rule ${issue.rule}"")"`;
 
-    let row = `${issue.fileName},${issue.lineNumber},${issue.component},${issue.name},Rule ${issue.rule},${link},${issue.description}`;
+    let row = `${issue.fileName},${issue.lineNumber},${issue.component.kind},${issue.component.name},Rule ${issue.rule},${link},${issue.description}`;
 
     csv.push(row);
   });
