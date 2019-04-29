@@ -361,9 +361,7 @@ function fileStatusStyle(fileMetadata) {
  */
 function issueDetails(index, issue) {
 
-  let xsd = issue.node.outerHTML
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
+  let xsd = issue.component.node.outerHTML
     .replace(" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"", "")
     .replace(" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"", "")
     .replace(" xmlns:xs='http://www.w3.org/2001/XMLSchema'", "")
@@ -375,15 +373,16 @@ function issueDetails(index, issue) {
 
   // Find the leading whitespace for the last line of the XSD text
   let lastLine = xsd.split("\n").pop();
-  let leadingWhitespace = lastLine.split("&lt;");
+  let leadingWhitespace = lastLine.split("<");
 
   if (leadingWhitespace.length > 0) {
     // Add the leading whitespace to the front of the XSD block
     xsd = leadingWhitespace[0] + xsd;
   }
 
-  let html = `<pre><code lang='xml'>${xsd}</code></pre>`;
-  return html;
+  let highlightedXSD =  hljs.highlight("xml", xsd, true);
+
+  return `<pre>${highlightedXSD.value}</pre>`;
 }
 
 
