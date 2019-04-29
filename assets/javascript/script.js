@@ -14,7 +14,6 @@ let FileMetadataType = {
   xsltPath: "",
   ruleSet: "",
   message: "",
-  issueCount: 0,
   status: "",
   text: "",
 
@@ -249,7 +248,7 @@ function testNDRConformance(fileMetadata) {
 function processResults(fileMetadata, svrl) {
 
   // Parse the SVRL results of the XSLT transform
-  fileMetadata.issueCount = parseIssues(fileMetadata, svrl);
+  parseIssues(fileMetadata, svrl);
 
   // Add file issues to the full issue array
   issues.push(...fileMetadata.issues);
