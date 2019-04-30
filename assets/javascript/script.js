@@ -41,10 +41,42 @@ let IssueType = {
 let issues = [];
 
 let doc = {
-  $issues: $("#issues"),
+
+  /** Div for an error message */
+  $errorMessage: $("#errorMessage"),
+
+  /** File Status table, Bootstrap Table plugin */
   $fileStatus: $("#fileStatus"),
+
+  /** Issue table, Bootstrap Table plugin */
+  $issues: $("#issues"),
+
+  /** Loading spinner */
   $loadingIcon: $("#loadingIcon"),
-  $errorMessage: $("#errorMessage")
+
+  /** Link to download issue list */
+  downloadBadge: document.getElementById("download-badge"),
+
+  /** Link to download conformance badge */
+  downloadIssues: document.getElementById("download-issues"),
+
+  /** Message showing the number of files selected */
+  fileInputMessage:document.getElementById("fileInputMessage"),
+
+  /** Input XSDs */
+  files: document.getElementById("files"),
+
+  /** Issue count badge */
+  issueCount: document.getElementById("issue-count"),
+
+  /** File reload button */
+  reload: document.getElementById("reload"),
+
+  /** User-selected NDR rule set */
+  selectedNDR: document.getElementById("ruleSet"),
+
+  /** NDR conformance badge */
+  svg: document.getElementById("svg")
 };
 
 
@@ -53,7 +85,7 @@ let doc = {
 function loadFiles() {
 
   /** @type {FileList} */
-  let files = document.getElementById("files").files;
+  let files = doc.files.files;
 
   if (files.length == 0) {
     // Stop processing if no files have been loaded
@@ -141,18 +173,17 @@ function resetResults() {
   doc.$issues.bootstrapTable("removeAll");
 
   // Remove status badge
-  document.getElementById("svg").innerHTML = null;
+  doc.svg.innerHTML = null;
 
-  // Reset issue count
-  let issueCount = document.getElementById("issue-count")
-  issueCount.innerHTML = null;
-  issueCount.classList.remove("badge-danger");
-  issueCount.classList.remove("badge-success");
-  issueCount.classList.remove("badge-warning");
+  // Reset issue count and remove any styling
+  doc.issueCount.innerHTML = null;
+  doc.issueCount.classList.remove("badge-danger");
+  doc.issueCount.classList.remove("badge-success");
+  doc.issueCount.classList.remove("badge-warning");
 
   // Disable downloads
-  disableLink("download-issues");
-  disableLink("download-badge");
+  disableLink(doc.downloadIssues);
+  disableLink(doc.downloadBadge);
 
 }
 
@@ -172,9 +203,6 @@ function resetResults() {
  */
 function getXSLTPath(fileMetadata) {
 
-  // User's NDR selection
-  let selectedNDR = document.getElementById("ruleSet");
-
   // Base stylesheet path
   let xslBase = document.URL
     .replace("#", "")
@@ -184,11 +212,11 @@ function getXSLTPath(fileMetadata) {
   let ndrTargetBase = "http://reference.niem.gov/niem/specification/naming-and-design-rules/";
 
 
-  if (selectedNDR.value != "auto") {
+  if (doc.selectedNDR.value != "auto") {
     // Handle user-selected NDR rule set
-    fileMetadata.ruleSet = selectedNDR.value.replace("-", " ");
+    fileMetadata.ruleSet = doc.selectedNDR.value.replace("-", " ");
     fileMetadata.message = "Rule set selected by user";
-    return xslBase + selectedNDR.value + ".sef";
+    return xslBase + doc.selectedNDR.value + ".sef";
   }
 
   // User selected auto-detect: determine the best rule set to use
@@ -459,47 +487,41 @@ function updateStatus(fileMetadata) {
 function loaded() {
 
   // Enable downloads
-  enableLink("download-issues");
-  enableLink("download-badge");
+  enableLink(doc.downloadIssues);
+  enableLink(doc.downloadBadge);
 
   // Remove the loading icon
   doc.$loadingIcon.html(null);
 
   // Set the issue count badge
-  let issueCount = document.getElementById("issue-count");
-  issueCount.innerText = issues.length;
-  issueCount.classList.add(issues.length == 0 ? "badge-success" : "badge-danger");
+  doc.issueCount.innerText = issues.length;
+  doc.issueCount.classList.add(issues.length == 0 ? "badge-success" : "badge-danger");
 
   // Display the NDR NDR issue badge
-  let div = document.getElementById("svg");
-  div.innerHTML = getBadge();
+  doc.svg.innerHTML = getBadge();
 
   // Enable the reload button
-  document.getElementById("reload").removeAttribute("disabled");
+  doc.reload.removeAttribute("disabled");
 }
 
 
 /**
- * Gets the document element with the given linkID.
  * Removes the "disabled" attribute and adds "href" attribute as "#".
- * @param {string} linkID
+ * @param {HTMLElement} linkElement
  */
-function enableLink(linkID) {
-  let link = document.getElementById(linkID);
-  link.removeAttribute("disabled");
-  link.setAttribute("href", "#");
+function enableLink(linkElement) {
+  linkElement.removeAttribute("disabled");
+  linkElement.setAttribute("href", "#");
 }
 
 
 /**
- * Gets the document element with the given linkID.
  * Adds the "disabled" attribute and removes the "href" attribute.
- * @param {string} linkID
+ * @param {HTMLElement} linkElement
  */
-function disableLink(linkID) {
-  let link = document.getElementById(linkID);
-  link.removeAttribute("href");
-  link.setAttribute("disabled", true);
+function disableLink(linkElement) {
+  linkElement.removeAttribute("href");
+  linkElement.setAttribute("disabled", true);
 }
 
 /**
@@ -560,7 +582,7 @@ function getIssueCSV() {
 }
 
 /**
- * Lets the user download the issue list as a CSV.
+ * Lets the user download the issue list as a CSV via FileSaver.
  *
  */
 function saveIssues() {
@@ -575,7 +597,7 @@ function saveIssues() {
 }
 
 /**
- * Lets the user download the NIEM NDR conformance badge.
+ * Lets the user download the NIEM NDR conformance badge via FileSaver.
  */
 function saveBadge() {
   let blob = new Blob([getBadge()], {type: "image/svg+xml;charset=utf-8"});
@@ -646,7 +668,7 @@ function setFileInputMessage(files) {
     msg = files.length + " files chosen";
   }
 
-  document.getElementById("fileInputMessage").innerText = msg;
+  doc.fileInputMessage.innerText = msg;
 }
 
 
