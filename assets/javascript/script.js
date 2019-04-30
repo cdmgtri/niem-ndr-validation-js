@@ -93,6 +93,7 @@ function loadFiles() {
 
     fileMetadataTracker[file.name] = fileMetadata;
 
+    // Add the file name and loading message to the file status table
     doc.$fileStatus.bootstrapTable("append", fileMetadata);
 
     // Process file contents
