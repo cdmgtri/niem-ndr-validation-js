@@ -79,6 +79,8 @@
       </form>
       <hr/><br />
 
+      <div id="errorMessage"/>
+
       <div class="row">
         <div class="col">
 
@@ -201,6 +203,11 @@
 
     <!-- App script -->
     <script type="text/javascript" language="javascript" src="./assets/javascript/script.js"></script>
+
+    <script type="text/javascript">
+      // Set a default error handler for the page
+      window.onerror = defaultErrorHandler;
+    </script>
 
     <script type="text/javascript">
 

@@ -1,6 +1,8 @@
 
 let loading = {};
 
+let repo = "https://github.com/cdmgtri/niem-ndr-validation-js";
+
 /** @type {Object<string, FileMetadataType} */
 let fileMetadataTracker = {};
 
@@ -41,7 +43,8 @@ let issues = [];
 let doc = {
   $issues: $("#issues"),
   $fileStatus: $("#fileStatus"),
-  $loadingIcon: $("#loadingIcon")
+  $loadingIcon: $("#loadingIcon"),
+  $errorMessage: $("#errorMessage")
 };
 
 
@@ -682,4 +685,33 @@ function getBadge() {
 </svg>`;
 
   return svg;
+}
+
+
+/**
+ * Default handler for any page errors.
+ *
+ * @param {string} message
+ * @param {string} source
+ * @param {string} line
+ * @param {string} col
+ * @param {Error} error
+ */
+function defaultErrorHandler(message, source, line, col, error) {
+
+  // Display an error alert
+  let alert = `
+  <div class="alert alert-danger" role="alert">
+    <h4>${message}</h4>
+    <hr/>
+    ${source} ${line}:${col}
+    <br/>
+    <p>Please <a href='${repo}/issues' target='_blank'>file an issue</a> and attach the input file(s).</p>
+  </div>
+  `
+
+  doc.$errorMessage.html(alert);
+
+  // Remove the loading icon
+  doc.$loadingIcon.html(null);
 }
