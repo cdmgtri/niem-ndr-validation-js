@@ -173,7 +173,9 @@ function getXSLTPath(fileMetadata) {
   let selectedNDR = document.getElementById("ruleSet");
 
   // Base stylesheet path
-  let xslBase = document.URL.replace("index.html", "") + "assets/ndr/";
+  let xslBase = document.URL
+    .replace("#", "")
+    .replace("index.html", "") + "assets/ndr/";
 
   // Base NDR conformance target URL
   let ndrTargetBase = "http://reference.niem.gov/niem/specification/naming-and-design-rules/";
