@@ -225,8 +225,11 @@
       // Make the input boxes smaller
       $(".filter-control").addClass("input-group-sm");
 
-      // Fix the tooltip of the Bootstrap-Table column-select button
-      $(".fa-th-list").parent().attr("title", "Show columns");
+      // Fix the tooltip ("Fullscreen") of the Bootstrap-Table column-select button
+      $(".fa-th-list").parent().attr("title", "Select columns to display");
+
+      // Change the tooltip of the Bootstrap-Table toggle button
+      $("[class^='fa fa-toggle']").parent().attr("title", "Toggle table row view");
 
     </script>
   </body>
