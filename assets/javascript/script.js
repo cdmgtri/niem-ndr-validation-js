@@ -54,6 +54,9 @@ let doc = {
   /** Loading spinner */
   $loadingIcon: $("#loadingIcon"),
 
+  /** Results div */
+  $results: $("#results"),
+
   /** Link to download issue list */
   downloadBadge: document.getElementById("download-badge"),
 
@@ -97,6 +100,9 @@ function loadFiles() {
 
   // Update the number of files selected
   setFileInputMessage(files);
+
+  // Show the results panel
+  doc.$results.show();
 
 
   // Add a loading spinner to the page

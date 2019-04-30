@@ -3,8 +3,20 @@ body {
   font-size: 16px;
 }
 
+h1 {
+  font-size: 36px;
+}
+
 h2 {
   font-size: 24px;
+}
+
+a {
+  color: #00709A;
+}
+
+#results {
+  display: none;
 }
 
 .table-width-auto {

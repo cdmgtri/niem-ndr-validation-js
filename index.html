@@ -24,8 +24,16 @@
 
     <div class="container">
 
-      <h1>NDR Conformance Test Results</h1>
-      <hr/>
+      <br>
+      <div id="title" class="alert alert-info text-center">
+        <h1>
+          <a href="https://niem.gov" target="_blank"
+          ><img src="assets/images/logo.png"></a>
+          NDR Conformance Testing</h1>
+        <hr>
+        <p>Upload NIEM XML schemas to check for conformance to the <a
+          href="https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html" target="_blank">NIEM Naming and Design Rules (NDR)</a>.</p>
+      </div>
 
       <form>
         <div class="row">
@@ -66,119 +74,117 @@
           </div>
 
         </div>
-        <br/>
-
-        <div class="row">
-          <div class="col">
-            Download:
-            <a id="download-issues" disabled onclick="saveIssues()">Issues</a> |
-            <a id="download-badge" disabled onclick="saveBadge()">Badge</a>
-            <span id="svg"></span>
-          </div>
-        </div>
       </form>
-      <hr/><br />
+      <hr/><br/>
 
+      <!-- Placeholder for error messages -->
       <div id="errorMessage"/>
 
-      <div class="row">
-        <div class="col">
+      <span id="results">
 
-          <!-- Status header and downloads -->
-          <h2>
-            Overall Status
-            <span id="loadingIcon"></span>
-          </h2>
+        <!-- Status header and downloads -->
+        <h2>
+          Overall Status
+          <span id="loadingIcon"></span>
+          <span id="svg"></span>
 
-          <!-- File status table -->
-          <table
-            id="fileStatus"
-            data-classes="table"
-            data-toggle="table"
-            data-id-field="name"
-            data-row-style="fileStatusStyle"
-            >
-            <thead>
-              <tr>
-                <th data-field="name">File</th>
-                <th data-field="status">Status</th>
-                <th data-field="ruleSet">Rule set</th>
-                <th data-field="message">Message</th>
-                <th data-field="lastModified">Last Modified</th>
-              </tr>
-            </thead>
-          </table>
-        </div>
-      </div>
-      <br/><br/>
+          <span class="float-right">
+            <!-- Download issues -->
+            <button class="btn btn-info btn-sm text-right" id="download-issues" disabled onclick="saveIssues()">Download issues</button>
 
-      <!-- Issue list table -->
-      <h2>Issue List <span id="issue-count" class="badge badge-pill"></span></h2>
-      <div id="issuesWrapper">
+            <!-- Download NIEM NDR conformance badge -->
+            <button class="btn btn-info btn-sm text-right" id="download-badge" disabled onclick="saveBadge()">Download badge</button>
+          </span>
+        </h2>
+        <br/>
+
+        <!-- File status table -->
         <table
-          id="issues"
-          data-toggle="table"
+          id="fileStatus"
           data-classes="table"
-          data-flat="true"
-          data-detail-view="true"
-          data-detail-filter="issueDetailsFilter"
-          data-detail-formatter="issueDetails"
-          data-filter-control="true"
-          data-filter-show-clear="true"
-          data-show-columns="true"
-          data-show-toggle="true"
-          data-smart-display="true"
-          data-buttons-align="right"
-          data-buttons-class="btn btn-sm btn-secondary"
-          data-pagination="true"
-          data-only-info-pagination="true"
-          data-pagination-v-align="top"
+          data-toggle="table"
+          data-id-field="name"
+          data-row-style="fileStatusStyle"
           >
           <thead>
             <tr>
-              <th
-                data-field="fileName"
-                data-filter-control="select"
-                data-sortable="true"
-                class="td-width-15"
-                >File</th>
-              <th
-                data-field="lineNumber"
-                data-filter-control="select"
-                data-sortable="true"
-                class="td-width-05"
-                >Line</th>
-              <th
-                data-field="componentKind"
-                data-filter-control="select"
-                data-sortable="true"
-                >Component</th>
-              <th
-                data-field="componentName"
-                data-filter-control="select"
-                data-sortable="true"
-                class="td-wrap td-width-25"
-                >Name
-              </th>
-              <th
-                data-field="rule"
-                data-filter-control="select"
-                data-sortable="true"
-                data-formatter="ruleFormatter"
-                class="td-no-wrap"
-                >Rule</th>
-              <th
-                data-field="description"
-                data-filter-control="select"
-                data-sortable="true"
-                >Description</th>
+              <th data-field="name">File</th>
+              <th data-field="status">Status</th>
+              <th data-field="ruleSet">Rule set</th>
+              <th data-field="message">Message</th>
+              <th data-field="lastModified">Last Modified</th>
             </tr>
           </thead>
         </table>
-      </div>
-      <br><br>
+        <br/><hr/><br/>
 
-    </div>
+        <!-- Issue list table -->
+        <h2>Issue List <span id="issue-count" class="badge badge-pill"></span></h2>
+        <div id="issuesWrapper">
+          <table
+            id="issues"
+            data-toggle="table"
+            data-classes="table"
+            data-flat="true"
+            data-detail-view="true"
+            data-detail-filter="issueDetailsFilter"
+            data-detail-formatter="issueDetails"
+            data-filter-control="true"
+            data-filter-show-clear="true"
+            data-show-columns="true"
+            data-show-toggle="true"
+            data-smart-display="true"
+            data-buttons-align="right"
+            data-buttons-class="btn btn-sm btn-secondary"
+            data-pagination="true"
+            data-only-info-pagination="true"
+            data-pagination-v-align="top"
+            >
+            <thead>
+              <tr>
+                <th
+                  data-field="fileName"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  class="td-width-15"
+                  >File</th>
+                <th
+                  data-field="lineNumber"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  class="td-width-05"
+                  >Line</th>
+                <th
+                  data-field="componentKind"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  >Component</th>
+                <th
+                  data-field="componentName"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  class="td-wrap td-width-25"
+                  >Name
+                </th>
+                <th
+                  data-field="rule"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  data-formatter="ruleFormatter"
+                  class="td-no-wrap"
+                  >Rule</th>
+                <th
+                  data-field="description"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  >Description</th>
+              </tr>
+            </thead>
+          </table>
+          <br><br>
+        </div>  <!-- end table wrapper div-->
+      </div>  <!-- end results div -->
+    </div>  <!-- end body container div -->
 
 
     <!-- Bootstrap scripts -->
