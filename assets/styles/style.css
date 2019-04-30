@@ -34,3 +34,7 @@ pre {
   background: whitesmoke;
   padding: 10px;
 }
+
+.fa-circle-o-notch::before {
+  content: "\f1ce";
+}

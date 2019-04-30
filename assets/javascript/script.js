@@ -42,7 +42,8 @@ let issues = [];
 
 let doc = {
   $issues: $("#issues"),
-  $fileStatus: $("#fileStatus")
+  $fileStatus: $("#fileStatus"),
+  $loadingIcon: $("#loadingIcon")
 };
 
 
@@ -64,6 +65,13 @@ function loadFiles() {
   // Update the number of files selected
   setFileInputMessage(files);
 
+
+  // Add a loading spinner to the page
+  let spinner = `
+  <i class="fa fa-circle-o-notch fa-spin fa-fw"></i>
+  <span class="sr-only">Loading...</span>`;
+
+  doc.$loadingIcon.html(spinner);
 
   for (let file of files) {
 
@@ -435,6 +443,9 @@ function loaded() {
   // Enable downloads
   enableLink("download-issues");
   enableLink("download-badge");
+
+  // Remove the loading icon
+  doc.$loadingIcon.html(null);
 
   // Set the issue count badge
   let issueCount = document.getElementById("issue-count");
