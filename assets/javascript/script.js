@@ -1,8 +1,6 @@
 
 let loading = {};
 
-let ruleBase = "https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html#rule_";
-
 /** @type {Object<string, FileMetadataType} */
 let fileMetadataTracker = {};
 
@@ -32,6 +30,8 @@ let IssueType = {
   /** @type {HTMLElement} */
   componentNode: null,
   rule: "",
+  ruleLink: "",
+  ruleHyperlink: "",
   description: ""
 };
 
@@ -314,6 +314,8 @@ function parseIssues(fileMetadata, svrl) {
       componentName,
       componentNode,
       rule,
+      ruleLink: getNDRRuleLink(rule),
+      ruleHyperlink: getNDRRuleHyperlink(rule),
       description
     };
 
@@ -406,6 +408,20 @@ function issueDetailsFilter(index, issue) {
   return issue.componentKind != "schema";
 }
 
+
+/**
+ * Column formatter function for the Bootstrap Table plugin.
+ *
+ * Formats the given rule as a link to the NDR.
+ *
+ * @param {string} value
+ * @param {IssueType} issue
+ */
+function ruleFormatter(value, issue) {
+  return `<a href='${issue.ruleLink}' target='_blank'>${issue.rule}</a>`;
+}
+
+
 /**
  * Update the file status with a pass/fail message and row highlighting.
  *
@@ -482,16 +498,53 @@ function disableLink(linkID) {
 }
 
 /**
+ * Gets the HTML link for a given NDR rule number
+ *
+ * @param {string} ruleNumber
+ * @return {string}
+ */
+function getNDRRuleLink(ruleNumber) {
+
+  let ruleBase = "https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html#rule_";
+
+  return ruleBase + ruleNumber;
+}
+
+
+/**
+ * Gets an Excel hyperlink with the given label and link.
+ *
+ * @param {string} label
+ * @param {string} link
+ * @return {string}
+ */
+function getExcelHyperlink(label, link) {
+  return `"=HYPERLINK(""${link}"",""${label}"")"`;
+}
+
+
+/**
+ * Gets an Excel hyperlink for a given NDR rule number
+ *
+ * @param {string} ruleNumber
+ * @return {string}
+ */
+function getNDRRuleHyperlink(ruleNumber) {
+  return getExcelHyperlink("Rule " + ruleNumber, getNDRRuleLink(ruleNumber));
+}
+
+
+/**
  * Generates a CSV of the issues.
  *
  * @returns {string}
  */
 function getIssueCSV() {
 
-  let csv = ['FileName,LineNumber,Component,Name,Rule,Link,Description'];
+  let csv = ['FileName,LineNumber,Component,Name,Rule,RuleLink,Description'];
 
   issues.forEach( issue => {
-    let link = `"=HYPERLINK(""${ruleBase}${issue.rule}"",""Rule ${issue.rule}"")"`;
+    let link = getNDRRuleHyperlink(issue.rule);
 
     let row = `${issue.fileName},${issue.lineNumber},${issue.componentKind},${issue.componentName},Rule ${issue.rule},${link},${issue.description}`;
 
