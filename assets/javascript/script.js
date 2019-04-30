@@ -27,12 +27,10 @@ let FileMetadataType = {
 let IssueType = {
   fileName: "",
   lineNumber: 0,
-  component: {
-    kind: "",
-    name: "",
-    /** @type {HTMLElement} */
-    node: null
-  },
+  componentKind: "",
+  componentName: "",
+  /** @type {HTMLElement} */
+  componentNode: null,
   rule: "",
   description: ""
 };
@@ -298,25 +296,23 @@ function parseIssues(fileMetadata, svrl) {
     let componentNameAttribute = componentNode.attributes["name"];
 
     // Set issue values
-    let name = componentNameAttribute ? componentNameAttribute.nodeValue : "";
-    let kind = componentNode.localName;
+    let componentName = componentNameAttribute ? componentNameAttribute.nodeValue : "";
+    let componentKind = componentNode.localName;
     let msg = failedAssert.textContent;
     let [rule, description] = msg.split(": ");
     rule = rule.replace("Rule ", "");
 
     // Get the XSD line number of the issue
-    let re = new RegExp(`${kind}\\s*name=.${name}`)
+    let re = new RegExp(`${componentKind}\\s*name=.${componentName}`)
     let lineNumber = getLineNumber(fileMetadata.text, re);
 
     /** @type {IssueType} */
     let issue = {
       fileName: fileMetadata.name,
       lineNumber,
-      component: {
-        kind,
-        name,
-        node: componentNode
-      },
+      componentKind,
+      componentName,
+      componentNode,
       rule,
       description
     };
@@ -369,7 +365,7 @@ function fileStatusStyle(fileMetadata) {
  */
 function issueDetails(index, issue) {
 
-  let xsd = issue.component.node.outerHTML
+  let xsd = issue.componentNode.outerHTML
     .replace(" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"", "")
     .replace(" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"", "")
     .replace(" xmlns:xs='http://www.w3.org/2001/XMLSchema'", "")
@@ -407,7 +403,7 @@ function issueDetails(index, issue) {
  * @param {IssueType} issue
  */
 function issueDetailsFilter(index, issue) {
-  return issue.component.kind != "schema";
+  return issue.componentKind != "schema";
 }
 
 /**
@@ -497,7 +493,7 @@ function getIssueCSV() {
   issues.forEach( issue => {
     let link = `"=HYPERLINK(""${ruleBase}${issue.rule}"",""Rule ${issue.rule}"")"`;
 
-    let row = `${issue.fileName},${issue.lineNumber},${issue.component.kind},${issue.component.name},Rule ${issue.rule},${link},${issue.description}`;
+    let row = `${issue.fileName},${issue.lineNumber},${issue.componentKind},${issue.componentName},Rule ${issue.rule},${link},${issue.description}`;
 
     csv.push(row);
   });
