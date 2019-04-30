@@ -1,0 +1,16 @@
+{
+  "name": "niem-ndr-validation-js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "http-server -o http://localhost:8080/index.html ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/jquery": "^3.3.29"
+  }
+}

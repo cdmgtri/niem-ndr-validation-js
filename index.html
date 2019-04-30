@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>NIEM JS NDR Validation</title>
+
+    <!-- Bootstrap stylesheet-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
+
+    <!-- Font Awesome stylesheet -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+
+    <!-- Bootstrap Table plugin stylesheet -->
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.14.2/dist/bootstrap-table.min.css">
+    <link rel="stylesheet" href="assets/styles/style.css"/>
+
+    <!-- Bootstrap Table plugin, Table Filter Control extension -->
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.14.2/extensions/filter-control/bootstrap-table-filter-control.min.css">
+
+    <!-- highlight.js -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/default.min.css">
+
+  </head>
+  <body>
+
+    <div class="container">
+
+      <br>
+      <div id="title" class="alert alert-info text-center">
+        <h1>
+          <a href="https://niem.gov" target="_blank"
+          ><img src="assets/images/logo.png"></a>
+          NDR Conformance Testing</h1>
+        <hr>
+        <p>Upload NIEM XML schemas to check for conformance to the <a
+          href="https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html" target="_blank">NIEM Naming and Design Rules (NDR)</a>.</p>
+      </div>
+
+      <form>
+        <div class="row">
+
+          <!-- Select files -->
+          <div class="col">
+            <div class="input-group input-group-sm">
+              <!-- Select files label -->
+              <div class="input-group-prepend">
+                <label class="input-group-text" for="files">Select Files: </label>
+              </div>
+              <!-- File input and message -->
+              <div class="custom-file">
+                <input type="file" id="files" name="files[]" multiple onchange="loadFiles()" class="custom-file-input" accept=".xsd"/>
+                <label class="custom-file-label" for="files" id="fileInputMessage">No files chosen</label>
+              </div>
+              <!-- Reload button -->
+              <div class="input-group-append">
+                <button id="reload" class="btn btn-outline-secondary" type="button" onclick="loadFiles()" disabled title="Reload if selected files have been updated locally">Reload</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Select NDR rule set -->
+          <div class="col">
+            <div class="input-group input-group-sm">
+              <!-- Rules label -->
+              <div class="input-group-prepend">
+                <label class="input-group-text" for="ruleSet">Rules:</label>
+              </div>
+              <!-- Drop-down box -->
+              <select class="custom-select custom-select-sm" id="ruleSet" onchange="loadFiles()">
+                <option value="auto" selected>Auto-detect</option>
+                <option value="NDR-4.0-EXT">NDR 4.0 EXT (for IEPD extension schemas)</option>
+                <option value="NDR-4.0-REF">NDR 4.0 REF (for reference and release schemas)</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+      </form>
+      <hr/><br/>
+
+      <!-- Placeholder for error messages -->
+      <div id="errorMessage"/>
+
+      <span id="results">
+
+        <!-- Status header and downloads -->
+        <h2>
+          Overall Status
+          <span id="loadingIcon"></span>
+          <span id="svg"></span>
+
+          <span class="float-right">
+            <!-- Download issues -->
+            <button class="btn btn-info btn-sm text-right" id="download-issues" disabled onclick="saveIssues()">Download issues</button>
+
+            <!-- Download NIEM NDR conformance badge -->
+            <button class="btn btn-info btn-sm text-right" id="download-badge" disabled onclick="saveBadge()">Download badge</button>
+          </span>
+        </h2>
+        <br/>
+
+        <!-- File status table -->
+        <table
+          id="fileStatus"
+          data-classes="table"
+          data-toggle="table"
+          data-id-field="name"
+          data-row-style="fileStatusStyle"
+          >
+          <thead>
+            <tr>
+              <th data-field="name">File</th>
+              <th data-field="status">Status</th>
+              <th data-field="ruleSet">Rule set</th>
+              <th data-field="message">Message</th>
+              <th data-field="lastModified">Last Modified</th>
+            </tr>
+          </thead>
+        </table>
+        <br/><hr/><br/>
+
+        <!-- Issue list table -->
+        <h2>Issue List <span id="issue-count" class="badge badge-pill"></span></h2>
+        <div id="issuesWrapper">
+          <table
+            id="issues"
+            data-toggle="table"
+            data-classes="table"
+            data-flat="true"
+            data-detail-view="true"
+            data-detail-filter="issueDetailsFilter"
+            data-detail-formatter="issueDetails"
+            data-filter-control="true"
+            data-filter-show-clear="true"
+            data-show-columns="true"
+            data-show-toggle="true"
+            data-smart-display="true"
+            data-buttons-align="right"
+            data-buttons-class="btn btn-sm btn-secondary"
+            data-pagination="true"
+            data-only-info-pagination="true"
+            data-pagination-v-align="top"
+            >
+            <thead>
+              <tr>
+                <th
+                  data-field="fileName"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  class="td-width-15"
+                  >File</th>
+                <th
+                  data-field="lineNumber"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  class="td-width-05"
+                  >Line</th>
+                <th
+                  data-field="componentKind"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  >Component</th>
+                <th
+                  data-field="componentName"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  class="td-wrap td-width-25"
+                  >Name
+                </th>
+                <th
+                  data-field="rule"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  data-formatter="ruleFormatter"
+                  class="td-no-wrap"
+                  >Rule</th>
+                <th
+                  data-field="description"
+                  data-filter-control="select"
+                  data-sortable="true"
+                  >Description</th>
+              </tr>
+            </thead>
+          </table>
+          <br><br>
+        </div>  <!-- end table wrapper div-->
+      </div>  <!-- end results div -->
+    </div>  <!-- end body container div -->
+
+
+    <!-- Bootstrap scripts -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap Table plugin -->
+    <script src="https://unpkg.com/bootstrap-table@1.14.2/dist/bootstrap-table.min.js"></script>
+
+    <!-- Bootstrap Table plugin, Table Filter Control extension -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.14.2/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+
+    <!-- Saxon JS -->
+    <script type="text/javascript" language="javascript" src="./assets/javascript/Saxon-JS/SaxonJS.min.js"></script>
+
+    <!-- FileSaver -->
+    <script type="text/javascript" language="javascript" src="./assets/javascript/file-saver/dist/FileSaver.min.js"></script>
+
+    <!-- highlight.js -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
+
+    <!-- App script -->
+    <script type="text/javascript" language="javascript" src="./assets/javascript/script.js"></script>
+
+    <script type="text/javascript">
+      // Set a default error handler for the page
+      window.onerror = defaultErrorHandler;
+    </script>
+
+    <script type="text/javascript">
+
+      // Initialize the two tables as Bootstrap-Table tables
+      $("#issues").bootstrapTable({data: []});
+      $("#fileStatus").bootstrapTable({data: []});
+
+      // Set the toolbar icons size as small
+      $('.toolbar input').change(function () {
+        $table.bootstrapTable('refreshOptions', {
+          iconSize: "sm",
+        })
+      });
+
+      // Make the input boxes smaller
+      $(".filter-control").addClass("input-group-sm");
+
+      // Fix the tooltip ("Fullscreen") of the Bootstrap-Table column-select button
+      $(".fa-th-list").parent().attr("title", "Select columns to display");
+
+      // Change the tooltip of the Bootstrap-Table toggle button
+      $("[class^='fa fa-toggle']").parent().attr("title", "Toggle table row view");
+
+    </script>
+  </body>
+</html>

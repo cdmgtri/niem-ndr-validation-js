@@ -1,0 +1,79 @@
+
+body {
+  font-size: 16px;
+}
+
+h1 {
+  font-size: 36px;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+a {
+  color: #00709A;
+}
+
+#results {
+  display: none;
+}
+
+.table-width-auto {
+  width: auto !important;
+}
+
+.td-no-wrap {
+  white-space: nowrap;
+  width: 70px;
+}
+
+.td-wrap {
+  word-break: break-word;
+}
+
+.td-width-05 {
+  width: 5%;
+}
+
+.td-width-15 {
+  width: 15%;
+}
+
+.td-width-25 {
+  width: 25%;
+}
+
+/* Remove the default "Choose File" button on the file input  */
+.custom-file-label:after {
+  content: none;
+}
+
+/* Decrease the default text size of drop-down options */
+option {
+  font-size: 0.75rem !important;
+}
+
+/* Move the table toolbar inline with the above header */
+#issuesWrapper {
+  margin-top: -50px;
+}
+
+#fileInputMessage {
+  padding-left: 10px;
+  padding-right: 0px;
+}
+
+pre {
+  white-space: pre-wrap;       /* Since CSS 2.1 */
+  white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
+  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+  background: whitesmoke;
+  padding: 10px;
+}
+
+.fa-circle-o-notch::before {
+  content: "\f1ce";
+}

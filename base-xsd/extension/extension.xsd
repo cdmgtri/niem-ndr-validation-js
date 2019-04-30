@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<xs:schema
+	targetNamespace="http://example.com/exchanges/passport-exchange/extension/1.0" version="alpha1"
+
+	xsi:schemaLocation="http://release.niem.gov/niem/appinfo/4.0/ ../niem/utility/appinfo/4.0/appinfo.xsd
+	http://release.niem.gov/niem/conformanceTargets/3.0/ ../niem/utility/conformanceTargets/3.0/conformanceTargets.xsd"
+
+	ct:conformanceTargets="http://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/#ExtensionSchemaDocument"
+
+	xmlns:ext="http://example.com/exchanges/passport-exchange/extension/1.0"
+	xmlns:appinfo="http://release.niem.gov/niem/appinfo/4.0/"
+	xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+	xmlns:iso_3166="http://release.niem.gov/niem/codes/iso_3166-1/4.0/"
+	xmlns:j="http://release.niem.gov/niem/domains/jxdm/6.1/"
+	xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/"
+	xmlns:niem-xs="http://release.niem.gov/niem/proxy/xsd/4.0/"
+	xmlns:structures="http://release.niem.gov/niem/structures/4.0/"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+	<xs:annotation>
+		<xs:documentation>An exchange to share passport information across....</xs:documentation>
+	</xs:annotation>
+
+	<xs:import schemaLocation="../niem/niem-core/4.0/niem-core.xsd"
+		namespace="http://release.niem.gov/niem/niem-core/4.0/"/>
+	<xs:import schemaLocation="../niem/codes/iso_3166-1/4.0/iso_3166.xsd"
+		namespace="http://release.niem.gov/niem/codes/iso_3166-1/4.0/"/>
+	<xs:import schemaLocation="../niem/domains/jxdm/6.1/jxdm.xsd"
+		namespace="http://release.niem.gov/niem/domains/jxdm/6.1/"/>
+	<xs:import schemaLocation="../niem/utility/structures/4.0/structures.xsd"
+		namespace="http://release.niem.gov/niem/structures/4.0/"/>
+	<xs:import schemaLocation="../niem/proxy/xsd/4.0/xs.xsd"
+		namespace="http://release.niem.gov/niem/proxy/xsd/4.0/"/>
+
+  <xs:element name='PassportExchange' type='ext:PassportExchangeType' nillable='true'>
+    <xs:annotation>
+      <xs:documentation>An exchange that shares passport information for processing before application approval.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:complexType name='PassportExchangeType'>
+    <xs:annotation>
+      <xs:documentation>A data type for a passport exchange.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base='structures:ObjectType'>
+        <xs:sequence>
+          <xs:element ref='nc:Passport' minOccurs='1' maxOccurs='1'/>
+          <xs:element ref='nc:Metadata' minOccurs='1' maxOccurs='1'/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+	<xs:element name="PersonCitizenshipISO3166Alpha3Code" type="iso_3166:CountryAlpha3CodeType" substitutionGroup="nc:PersonCitizenshipAbstract">
+		<xs:annotation>
+			<xs:documentation>A country that assigns rights, duties, and privileges to a person because of the birth or naturalization of the person in that country.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+  <xs:element name='PassportAugmentation' type='ext:PassportAugmentationType' substitutionGroup='nc:PassportAugmentationPoint'>
+    <xs:annotation>
+      <xs:documentation>Additional information about a passport.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:complexType name='PassportAugmentationType'>
+    <xs:annotation>
+      <xs:documentation>A data type for additional information about a passport.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base='structures:AugmentationType'>
+        <xs:sequence>
+          <xs:element ref='ext:PassportMinorIndicator' minOccurs='1' maxOccurs='1'/>
+          <xs:element ref='ext:PassportExpeditedIndicator' minOccurs='1' maxOccurs='1'/>
+          <xs:element ref='ext:PassportRenewalIndicator' minOccurs='1' maxOccurs='1'/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+	<xs:element name="PassportMinorIndicator" type="niem-xs:boolean" nillable="true">
+		<xs:annotation>
+			<xs:documentation>True if a passport is for a minor; false if a passport is for an adult.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+  <xs:element name='PassportExpeditedIndicator' type='niem-xs:boolean' nillable='true'>
+    <xs:annotation>
+      <xs:documentation>True if a passport should be processed in a short amount of time for a rapid turn-around; false otherwise.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name='PassportRenewalIndicator' type='niem-xs:boolean' nillable='true'>
+    <xs:annotation>
+      <xs:documentation>True if this passport has been issued as a renewal; false if this is the first time the passport has been issued.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+
+</xs:schema>
