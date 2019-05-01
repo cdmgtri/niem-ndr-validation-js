@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "http-server -o http://localhost:8080/index.html ."
+    "start": "http-server -o http://localhost:8080/index.html ."
   },
   "keywords": [],
   "author": "",

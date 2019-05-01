@@ -3,6 +3,8 @@
   <head>
     <title>NIEM JS NDR Validation</title>
 
+    <link rel="icon" href="favicon.ico"/>
+
     <!-- Bootstrap stylesheet-->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
 
@@ -123,61 +125,36 @@
         <div id="issuesWrapper">
           <table
             id="issues"
-            data-toggle="table"
+            data-buttons-align="right"
+            data-buttons-class="btn btn-sm btn-secondary"
             data-classes="table"
-            data-flat="true"
             data-detail-view="true"
             data-detail-filter="issueDetailsFilter"
             data-detail-formatter="issueDetails"
             data-filter-control="true"
             data-filter-show-clear="true"
+            data-flat="true"
+            data-only-info-pagination="true"
+            data-pagination="true"
+            data-pagination-v-align="top"
             data-show-columns="true"
             data-show-toggle="true"
             data-smart-display="true"
-            data-buttons-align="right"
-            data-buttons-class="btn btn-sm btn-secondary"
-            data-pagination="true"
-            data-only-info-pagination="true"
-            data-pagination-v-align="top"
+            data-toggle="table"
             >
             <thead>
               <tr>
-                <th
-                  data-field="fileName"
-                  data-filter-control="select"
-                  data-sortable="true"
-                  class="td-width-15"
-                  >File</th>
-                <th
-                  data-field="lineNumber"
-                  data-filter-control="select"
-                  data-sortable="true"
-                  class="td-width-05"
-                  >Line</th>
-                <th
-                  data-field="componentKind"
-                  data-filter-control="select"
-                  data-sortable="true"
-                  >Component</th>
-                <th
-                  data-field="componentName"
-                  data-filter-control="select"
-                  data-sortable="true"
-                  class="td-wrap td-width-25"
-                  >Name
-                </th>
-                <th
-                  data-field="rule"
-                  data-filter-control="select"
-                  data-sortable="true"
-                  data-formatter="ruleFormatter"
-                  class="td-no-wrap"
-                  >Rule</th>
-                <th
-                  data-field="description"
-                  data-filter-control="select"
-                  data-sortable="true"
-                  >Description</th>
+                <th data-field="fileName" data-filter-control="select" data-sortable="true" class="td-width-15">File</th>
+
+                <th data-field="lineNumber" data-filter-control="select" data-sortable="true" class="td-width-05">Line</th>
+
+                <th data-field="componentKind" data-filter-control="select" data-sortable="true">Component</th>
+
+                <th data-field="componentName" data-filter-control="select" data-sortable="true" class="td-wrap td-width-25">Name</th>
+
+                <th data-field="rule" data-filter-control="select" data-sortable="true" data-formatter="ruleFormatter"class="td-no-wrap">Rule</th>
+
+                <th data-field="description" data-filter-control="select" data-sortable="true">Description</th>
               </tr>
             </thead>
           </table>
@@ -211,11 +188,9 @@
     <script type="text/javascript" language="javascript" src="./assets/javascript/script.js"></script>
 
     <script type="text/javascript">
+
       // Set a default error handler for the page
       window.onerror = defaultErrorHandler;
-    </script>
-
-    <script type="text/javascript">
 
       // Initialize the two tables as Bootstrap-Table tables
       $("#issues").bootstrapTable({data: []});
