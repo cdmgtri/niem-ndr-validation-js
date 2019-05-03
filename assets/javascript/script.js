@@ -3,6 +3,11 @@ let loading = {};
 
 let repo = "https://github.com/cdmgtri/niem-ndr-validation-js";
 
+let examplesRootPath = getBasePath() + "base-xsd/extension/";
+
+/** @type {File[]} */
+let files = [];
+
 /** @type {Object<string, FileMetadataType} */
 let fileMetadataTracker = {};
 
@@ -84,11 +89,64 @@ let doc = {
 
 
 /**
+ * Load user-selected input files and run validation.
+ */
+function loadInputFiles() {
+  files = Array.from(doc.files.files);
+  loadFiles();
+}
+
+/**
+ * Load valid example schema and run validation.
+ */
+function loadValidExample() {
+  files = [];
+  loadExampleFile("extension.xsd");
+  loadFiles();
+}
+
+/**
+ * Load invalid example schema and run validation.
+ */
+function loadInvalidExample() {
+  files = [];
+  loadExampleFile("test-1.xsd");
+  loadFiles();
+}
+
+/**
+ * Load multiple example schemas (valid and invalid) and run validation.
+ */
+function loadMultiplesExample() {
+  files = [];
+  loadExampleFile("extension.xsd");
+  loadExampleFile("test-1.xsd");
+  loadExampleFile("test-2.xsd");
+  loadFiles();
+}
+
+/**
+ * Reads a text file in this project and saves it as a new file in the
+ * files array.
+ */
+function loadExampleFile(fileName) {
+
+  let filePath = examplesRootPath + fileName;
+
+  let req = new XMLHttpRequest();
+  req.addEventListener("load", evt => {
+    files.push( new File([evt.target.responseText], fileName) );
+  });
+  req.open("GET", filePath, false);
+  req.send();
+}
+
+
+/**
+ * Updates the display with file loading information and runs NDR validation
+ * on schemas already loaded to the files array.
  */
 function loadFiles() {
-
-  /** @type {FileList} */
-  let files = doc.files.files;
 
   if (files.length == 0) {
     // Stop processing if no files have been loaded
@@ -112,7 +170,7 @@ function loadFiles() {
 
   doc.$loadingIcon.html(spinner);
 
-  for (let file of files) {
+  files.forEach( file => {
 
     // Add file name to the loading queue
     loading[file.name] = true;
@@ -158,7 +216,7 @@ function loadFiles() {
 
     fileReader.readAsText(file);
 
-  }
+  });
 }
 
 
@@ -191,8 +249,19 @@ function resetResults() {
   disableLink(doc.downloadIssues);
   disableLink(doc.downloadBadge);
 
+  // Hide the results panel
+  doc.$results.hide();
 }
 
+/**
+ * Gets the base path of the application, removing the file name (index.html)
+ * and an option '#' from the path.
+ */
+function getBasePath() {
+  return document.URL
+    .replace("#", "")
+    .replace("index.html", "");
+}
 
 /**
  * Determine which NDR rule set should be used based on the user selection
@@ -210,9 +279,7 @@ function resetResults() {
 function getXSLTPath(fileMetadata) {
 
   // Base stylesheet path
-  let xslBase = document.URL
-    .replace("#", "")
-    .replace("index.html", "") + "assets/ndr/";
+  let xslBase = getBasePath() + "assets/ndr/";
 
   // Base NDR conformance target URL
   let ndrTargetBase = "http://reference.niem.gov/niem/specification/naming-and-design-rules/";

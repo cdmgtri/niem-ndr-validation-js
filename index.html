@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
 
     <!-- Font Awesome stylesheet -->
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.2/css/font-awesome.min.css">
 
     <!-- Bootstrap Table plugin stylesheet -->
     <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.14.2/dist/bootstrap-table.min.css">
@@ -34,7 +34,7 @@
           NDR Conformance Testing</h1>
         <hr>
         <p>Upload NIEM XML schemas to check for conformance to the <a
-          href="https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html" target="_blank">NIEM Naming and Design Rules (NDR)</a>.</p>
+          href="https://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html" target="_blank">NIEM Naming and Design Rules (NDR)</a>.<br/><i>Try out the tool using provided example schemas, under the Options button.</i></p>
       </div>
 
       <form>
@@ -43,18 +43,52 @@
           <!-- Select files -->
           <div class="col">
             <div class="input-group input-group-sm">
+
               <!-- Select files label -->
               <div class="input-group-prepend">
                 <label class="input-group-text" for="files">Select Files: </label>
               </div>
+
               <!-- File input and message -->
               <div class="custom-file">
-                <input type="file" id="files" name="files[]" multiple onchange="loadFiles()" class="custom-file-input" accept=".xsd"/>
+                <input type="file" id="files" name="files[]" multiple onchange="loadInputFiles()" class="custom-file-input" accept=".xsd"/>
                 <label class="custom-file-label" for="files" id="fileInputMessage">No files chosen</label>
               </div>
-              <!-- Reload button -->
+
+              <!-- Button group -->
               <div class="input-group-append">
-                <button id="reload" class="btn btn-outline-secondary" type="button" onclick="loadFiles()" disabled title="Reload if selected files have been updated locally">Reload</button>
+
+                <!-- Options dropdown button -->
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" id="options" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown">Options</button>
+                  <div class="dropdown-menu" aria-labelledby="options">
+
+                    <!-- Reload button -->
+                    <a class="dropdown-item" onclick="loadInputFiles()" id="reload" disabled title="Reload if current selection has been modified locally">
+                      <i class="fa fa-refresh fa-fw" aria-hidden="true"></i>
+                      Reload
+                    </a>
+                    <hr />
+
+                    <!-- Valid example button -->
+                    <a class="dropdown-item" onclick="loadValidExample()">
+                      <i class="fa fa-check fa-fw text-success" aria-hidden="true"></i>
+                      Valid NIEM 4.0 EXT example
+                    </a>
+
+                    <!-- Invalid example button -->
+                    <a class="dropdown-item" onclick="loadInvalidExample()">
+                      <i class="fa fa-exclamation fa-fw text-danger" aria-hidden="true"></i>
+                      Invalid NIEM 4.0 EXT example
+                    </a>
+
+                    <!-- Multiple schemas example button -->
+                    <a class="dropdown-item" onclick="loadMultiplesExample()">
+                      <i class="fa fa-files-o fa-fw text-alert" aria-hidden="true"></i>
+                      Multiple schemas example
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

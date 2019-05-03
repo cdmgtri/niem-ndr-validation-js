@@ -19,6 +19,8 @@ The goal of this effort is to create an automated and reusable way to implement 
 
 This project uses Saxon-JS to transform NIEM XML schemas with pre-compiled NDR XSL rules to generate a list of conformance issues.  Saxon-JS is currently only implemented for in-browser support.  A Node.js version is projected to be released in 2019.  At that point, this code could be refactored, better separating the core functionality from the user interface.
 
+The Saxon-JS library is crashing on transforms for large NIEM reference schemas.
+
 ## Usage
 
 This app is hosted on GitHub pages at <https://cdmgtri.github.io/niem-ndr-validation-js>.

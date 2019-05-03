@@ -50,8 +50,22 @@ a {
 }
 
 /* Decrease the default text size of drop-down options */
-option {
+option, .dropdown-item {
   font-size: 0.75rem !important;
+}
+
+.dropdown-menu hr {
+  margin: 5px 0;
+}
+
+/* Change the link select color from Bootstrap primary blue */
+.dropdown-item:active {
+  background-color: #D1ECF1;
+}
+
+#options {
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
 }
 
 /* Move the table toolbar inline with the above header */
@@ -72,8 +86,4 @@ pre {
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
   background: whitesmoke;
   padding: 10px;
-}
-
-.fa-circle-o-notch::before {
-  content: "\f1ce";
 }
