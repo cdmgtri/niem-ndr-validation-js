@@ -5,21 +5,14 @@
 
     <link rel="icon" href="favicon.ico"/>
 
-    <!-- Bootstrap stylesheet-->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
-
     <!-- Font Awesome stylesheet -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.2/css/font-awesome.min.css">
 
     <!-- Bootstrap Table plugin stylesheet -->
     <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.14.2/dist/bootstrap-table.min.css">
-    <link rel="stylesheet" href="assets/styles/style.css"/>
 
     <!-- Bootstrap Table plugin, Table Filter Control extension -->
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.14.2/extensions/filter-control/bootstrap-table-filter-control.min.css">
-
-    <!-- highlight.js -->
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/default.min.css">
 
   </head>
   <body>
@@ -30,7 +23,7 @@
       <div id="title" class="alert alert-info text-center">
         <h1>
           <a href="https://niem.gov" target="_blank"
-          ><img src="assets/images/logo.png"></a>
+          ><img src="logo.png"></a>
           NDR Conformance Testing</h1>
         <hr>
         <p>Upload NIEM XML schemas to check for conformance to the <a
@@ -51,7 +44,7 @@
 
               <!-- File input and message -->
               <div class="custom-file">
-                <input type="file" id="files" name="files[]" multiple onchange="loadInputFiles()" class="custom-file-input" accept=".xsd"/>
+                <input type="file" id="files" name="files[]" multiple class="custom-file-input" accept=".xsd"/>
                 <label class="custom-file-label" for="files" id="fileInputMessage">No files chosen</label>
               </div>
 
@@ -71,9 +64,15 @@
                     <hr />
 
                     <!-- Valid example button -->
-                    <a class="dropdown-item" onclick="loadValidExample()">
+                    <a class="dropdown-item" onclick="appFunctions.loadValidExample()">
                       <i class="fa fa-check fa-fw text-success" aria-hidden="true"></i>
                       Valid NIEM 4.0 EXT example
+                    </a>
+
+                    <!-- Test button -->
+                    <a class="dropdown-item" onclick="alert('here')">
+                      <i class="fa fa-gear fa-fw text-success" aria-hidden="true"></i>
+                      TEST
                     </a>
 
                     <!-- Invalid example button -->
@@ -197,55 +196,10 @@
       </div>  <!-- end results div -->
     </div>  <!-- end body container div -->
 
-
-    <!-- Bootstrap scripts -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-
-    <!-- Bootstrap Table plugin -->
-    <script src="https://unpkg.com/bootstrap-table@1.14.2/dist/bootstrap-table.min.js"></script>
-
-    <!-- Bootstrap Table plugin, Table Filter Control extension -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.14.2/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
-
     <!-- Saxon JS -->
-    <script type="text/javascript" language="javascript" src="./assets/javascript/Saxon-JS/SaxonJS.min.js"></script>
+    <!-- <script type="text/javascript" language="javascript" src="./src/Saxon-JS/SaxonJS.min.js"></script> -->
 
-    <!-- FileSaver -->
-    <script type="text/javascript" language="javascript" src="./assets/javascript/file-saver/dist/FileSaver.min.js"></script>
+    <script type="text/javascript" src="bundle.js"></script>
 
-    <!-- highlight.js -->
-    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
-
-    <!-- App script -->
-    <script type="text/javascript" language="javascript" src="./assets/javascript/script.js"></script>
-
-    <script type="text/javascript">
-
-      // Set a default error handler for the page
-      window.onerror = defaultErrorHandler;
-
-      // Initialize the two tables as Bootstrap-Table tables
-      $("#issues").bootstrapTable({data: []});
-      $("#fileStatus").bootstrapTable({data: []});
-
-      // Set the toolbar icons size as small
-      $('.toolbar input').change(function () {
-        $table.bootstrapTable('refreshOptions', {
-          iconSize: "sm",
-        })
-      });
-
-      // Make the input boxes smaller
-      $(".filter-control").addClass("input-group-sm");
-
-      // Fix the tooltip ("Fullscreen") of the Bootstrap-Table column-select button
-      $(".fa-th-list").parent().attr("title", "Select columns to display");
-
-      // Change the tooltip of the Bootstrap-Table toggle button
-      $("[class^='fa fa-toggle']").parent().attr("title", "Toggle table row view");
-
-    </script>
   </body>
 </html>

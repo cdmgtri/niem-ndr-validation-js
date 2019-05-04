@@ -1,9 +1,22 @@
 
+import $ from "jquery";
+import hljs from "highlight.js";
+import FileSaver from "file-saver";
+
+// Import dependencies for webpack
+import "./style.css";
+import "bootstrap/dist/css/bootstrap.css";
+import "bootstrap";
+import "bootstrap-table";
+import "bootstrap-table/dist/extensions/filter-control/bootstrap-table-filter-control";
+import "./Saxon-JS/SaxonJS";
+
+
 let loading = {};
 
 let repo = "https://github.com/cdmgtri/niem-ndr-validation-js";
 
-let examplesRootPath = getBasePath() + "base-xsd/extension/";
+let examplesRootPath = getBasePath() + "assets/examples/";
 
 /** @type {File[]} */
 let files = [];
@@ -666,7 +679,7 @@ function saveIssues() {
     {type: "text/csv;charset=UTF-8", encoding: "UTF-8"}
   );
 
-  saveAs(blob, "ndr-conformance-results.csv");
+  FileSaver.saveAs(blob, "ndr-conformance-results.csv");
 }
 
 /**
@@ -674,7 +687,7 @@ function saveIssues() {
  */
 function saveBadge() {
   let blob = new Blob([getBadge()], {type: "image/svg+xml;charset=utf-8"});
-  saveAs(blob, "niem-ndr-badge.svg");
+  FileSaver.saveAs(blob, "niem-ndr-badge.svg");
 }
 
 
@@ -809,4 +822,49 @@ function defaultErrorHandler(message, source, line, col, error) {
 
   // Remove the loading icon
   doc.$loadingIcon.html(null);
+}
+
+window.onload = windowLoad;
+
+function windowLoad() {
+
+  // Set a default error handler for the page
+  window.onerror = defaultErrorHandler;
+
+  // Initialize the two tables as Bootstrap-Table tables
+  $("#issues").bootstrapTable({data: []});
+  $("#fileStatus").bootstrapTable({data: []});
+
+  // Set the toolbar icons size as small
+  $('.toolbar input').change(function () {
+    $table.bootstrapTable('refreshOptions', {
+      iconSize: "sm",
+    })
+  });
+
+  // Make the input boxes smaller
+  $(".filter-control").addClass("input-group-sm");
+
+  // Fix the tooltip ("Fullscreen") of the Bootstrap-Table column-select button
+  $(".fa-th-list").parent().attr("title", "Select columns to display");
+
+  // Change the tooltip of the Bootstrap-Table toggle button
+  $("[class^='fa fa-toggle']").parent().attr("title", "Toggle table row view");
+
+  $("#files").change(loadInputFiles);
+
+  window.appFunctions = {
+    loadInputFiles,
+    loadValidExample,
+    loadInvalidExample,
+    loadMultiplesExample
+  }
+
+}
+
+export default {
+  loadInputFiles,
+  loadValidExample,
+  loadInvalidExample,
+  loadMultiplesExample
 }
