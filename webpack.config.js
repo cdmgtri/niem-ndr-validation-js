@@ -1,6 +1,7 @@
 
 const path = require("path");
 const webpack = require("webpack");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
   entry: "./src/index.js",
@@ -10,7 +11,8 @@ module.exports = {
   },
   devtool: "inline-source-map",
   devServer: {
-    contentBase: "./dist"
+    contentBase: "./dist",
+    watchContentBase: true
   },
   module: {
     rules: [
@@ -38,13 +40,16 @@ module.exports = {
   // externals: {
   //   jquery: "jQuery"
   // },
-  // plugins: [
-  //   new webpack.ProvidePlugin({
-  //     $: "jquery",
-  //     jQuery: "jquery",
-  //     SaxonJS: ""
-  //   }),
-  // ],
+  plugins: [
+    new HtmlWebpackPlugin({
+
+    })
+    // new webpack.ProvidePlugin({
+    //   $: "jquery",
+    //   jQuery: "jquery",
+    //   SaxonJS: ""
+    // }),
+  ],
   // externals: {
   //   SaxonJS
   // }
